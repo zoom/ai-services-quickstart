@@ -1,0 +1,37 @@
+playground/src/components/batch/ModeSelector.tsx
+  761e32a86779e693 13
+playground/src/tabs/FastTab.tsx
+  761e32a86779e693 51,82,95
+playground/src/index.css
+  761e32a86779e693 12-14,16-17,23,36,41,47-50
+playground/src/lib/colorizeJson.tsx
+  761e32a86779e693 4,8
+playground/src/components/ui.tsx
+  761e32a86779e693 20,25-26,80-84,86-87,89-91,98
+playground/src/tabs/BatchTab.tsx
+  761e32a86779e693 242
+playground/src/App.tsx
+  761e32a86779e693 13,30,42
+playground/src/components/batch/BatchResultVisual.tsx
+  761e32a86779e693 60
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.5",
+  "base_commit_sha": "64d5f752ca8597e719baf388d9f210ce2c98c440",
+  "prompts": {
+    "761e32a86779e693": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c5f0d777-edfc-46b9-bc61-155719e8a7f8",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": null,
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 37,
+      "overriden_lines": 0
+    }
+  }
+}
