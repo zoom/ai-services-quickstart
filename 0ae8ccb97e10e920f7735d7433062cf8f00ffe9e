@@ -1,0 +1,27 @@
+src/index.ts
+  85cb70e020027486 45-50,52-60,63
+playground/src/tabs/BatchTab.tsx
+  85cb70e020027486 72,81,84,87-88,148
+playground/src/components/batch/types.ts
+  85cb70e020027486 32,40,76-77,103,122
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.7",
+  "base_commit_sha": "0ae8ccb97e10e920f7735d7433062cf8f00ffe9e",
+  "prompts": {
+    "85cb70e020027486": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "3ccdddd7-3370-4aa6-90a7-6ddafdba50c4",
+        "model": "gpt-5.3-codex"
+      },
+      "human_author": "ekaansh <ekaansh68@gmail.com>",
+      "messages": [],
+      "total_additions": 127,
+      "total_deletions": 82,
+      "accepted_lines": 30,
+      "overriden_lines": 0
+    }
+  }
+}
