@@ -1,0 +1,29 @@
+src/util.ts
+  f18e217345d451a5 7-8,13,18-19,31-34,37-39,42-43,46-50,53,56-57,72
+playground/src/tabs/BatchTab.tsx
+  f18e217345d451a5 71
+.env.example
+  f18e217345d451a5 5
+README.md
+  f18e217345d451a5 27,33,36,38-43,45
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.7",
+  "base_commit_sha": "c5b215af2b6d6cc512c4a0d7ac61cc2e3fbbf65b",
+  "prompts": {
+    "f18e217345d451a5": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "4a9635c4-b82b-46a3-bb14-cce11a312bab",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "ekaansh <ekaansh.arora@zoom.us>",
+      "messages": [],
+      "total_additions": 45,
+      "total_deletions": 154,
+      "accepted_lines": 36,
+      "overriden_lines": 0
+    }
+  }
+}
