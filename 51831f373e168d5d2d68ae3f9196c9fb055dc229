@@ -1,0 +1,25 @@
+src/util.ts
+  f18e217345d451a5 2,79-86,88-106
+src/index.ts
+  f18e217345d451a5 5,56-57,67-68,111-112,128-130,174-176,185-186
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.7",
+  "base_commit_sha": "51831f373e168d5d2d68ae3f9196c9fb055dc229",
+  "prompts": {
+    "f18e217345d451a5": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "4a9635c4-b82b-46a3-bb14-cce11a312bab",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "ekaansh <ekaansh.arora@zoom.us>",
+      "messages": [],
+      "total_additions": 43,
+      "total_deletions": 10,
+      "accepted_lines": 43,
+      "overriden_lines": 0
+    }
+  }
+}
