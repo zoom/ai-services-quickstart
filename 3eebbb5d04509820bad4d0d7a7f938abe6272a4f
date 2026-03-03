@@ -1,0 +1,35 @@
+README.md
+  f18e217345d451a5 39-42
+playground/src/components/batch/BatchResultVisual.tsx
+  f18e217345d451a5 12
+src/index.ts
+  f18e217345d451a5 5,50-51,57,64,114-115,154-155,161,167
+src/util.ts
+  f18e217345d451a5 31-34,38-40,42-43,56,58,65,68
+playground/src/components/batch/types.ts
+  f18e217345d451a5 60-62,76,80
+playground/src/tabs/BatchTab.tsx
+  f18e217345d451a5 22
+.env.example
+  f18e217345d451a5 5,9-11
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.7",
+  "base_commit_sha": "3eebbb5d04509820bad4d0d7a7f938abe6272a4f",
+  "prompts": {
+    "f18e217345d451a5": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "4a9635c4-b82b-46a3-bb14-cce11a312bab",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "ekaansh <ekaansh.arora@zoom.us>",
+      "messages": [],
+      "total_additions": 42,
+      "total_deletions": 41,
+      "accepted_lines": 42,
+      "overriden_lines": 0
+    }
+  }
+}
