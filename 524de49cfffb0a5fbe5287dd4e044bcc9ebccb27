@@ -1,0 +1,39 @@
+src/index.ts
+  076b74039a8d7ffc 53,58
+  92c13759f0f2efdf 2,25-26,28,110-113,116-125
+playground/src/tabs/BatchTab.tsx
+  076b74039a8d7ffc 72,84
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.7",
+  "base_commit_sha": "524de49cfffb0a5fbe5287dd4e044bcc9ebccb27",
+  "prompts": {
+    "076b74039a8d7ffc": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "f51d0b50-3df5-44bc-b9a6-82d41a84a6ab",
+        "model": "gpt-5.3-codex"
+      },
+      "human_author": "ekaansh <ekaansh68@gmail.com>",
+      "messages": [],
+      "total_additions": 4,
+      "total_deletions": 4,
+      "accepted_lines": 4,
+      "overriden_lines": 0
+    },
+    "92c13759f0f2efdf": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "1c86b0b7-4968-4628-ba98-4765bc373b24",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "ekaansh <ekaansh68@gmail.com>",
+      "messages": [],
+      "total_additions": 37,
+      "total_deletions": 21,
+      "accepted_lines": 19,
+      "overriden_lines": 1
+    }
+  }
+}
