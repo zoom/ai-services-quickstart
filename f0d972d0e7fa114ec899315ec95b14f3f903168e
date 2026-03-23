@@ -1,0 +1,36 @@
+src/index.ts
+  0a1debae2bf779af 32,40-46
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.17",
+  "base_commit_sha": "f0d972d0e7fa114ec899315ec95b14f3f903168e",
+  "prompts": {
+    "0a1debae2bf779af": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "12f59c34-2fa8-4e48-bc1b-dd91a472b5ba",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "ekaansh <ekaansh68@gmail.com>",
+      "messages": [],
+      "total_additions": 8,
+      "total_deletions": 9,
+      "accepted_lines": 8,
+      "overriden_lines": 0
+    },
+    "8ffe8c2393146abd": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "06b72ad3-b555-40cf-aea8-6c9b4fe9f80c",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "ekaansh <ekaansh68@gmail.com>",
+      "messages": [],
+      "total_additions": 288,
+      "total_deletions": 182,
+      "accepted_lines": 254,
+      "overriden_lines": 0
+    }
+  }
+}
