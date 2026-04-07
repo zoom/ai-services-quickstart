@@ -1,0 +1,23 @@
+playground/src/tabs/FastTab.tsx
+  8ffe8c2393146abd 1,7-34,45-53,55-62,67-107,110-123,128-134,137-139,144,155-157,161-168,171-202,227,232-257,259-268,270-272,274-291,295,297-315,333,336,342,351,354
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.3",
+  "base_commit_sha": "e6dcd7a32acf843357d95cb9c5a9f8f6faad9c3d",
+  "prompts": {
+    "8ffe8c2393146abd": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "06b72ad3-b555-40cf-aea8-6c9b4fe9f80c",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "ekaansh <ekaansh68@gmail.com>",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 238,
+      "overriden_lines": 0
+    }
+  }
+}
