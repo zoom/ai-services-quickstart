@@ -1,0 +1,63 @@
+playground/src/products/scribe/components/batch/types.ts
+  391b345307a56a64 1-135
+src/index.ts
+  391b345307a56a64 5,13,18-19,21-23,45
+playground/src/products/scribe/tabs/BatchTab.tsx
+  391b345307a56a64 1-267
+playground/src/products.ts
+  391b345307a56a64 1-29
+src/routes/scribe.ts
+  391b345307a56a64 1-124
+package.json
+  391b345307a56a64 3,5
+playground/src/products/scribe/components/TranscriptPanel.tsx
+  391b345307a56a64 1-23
+playground/src/products/scribe/components/AudioUploadZone.tsx
+  391b345307a56a64 1-65
+playground/src/products/scribe/components/batch/ModeSelector.tsx
+  391b345307a56a64 1-25
+playground/index.html
+  391b345307a56a64 8
+playground/src/products/scribe/lib/constants.ts
+  391b345307a56a64 1-9
+playground/src/products/scribe/components/AsrConfig.tsx
+  391b345307a56a64 1-23
+playground/src/products/scribe/components/RecordingInterface.tsx
+  391b345307a56a64 1-99
+playground/src/products/scribe/components/batch/BatchResultVisual.tsx
+  391b345307a56a64 1-132
+playground/src/products/scribe/components/batch/JobsList.tsx
+  391b345307a56a64 1-94
+src/util.ts
+  391b345307a56a64 5,18,34,43,47
+playground/src/products/scribe/tabs/FastTab.tsx
+  391b345307a56a64 1-213
+playground/src/products/scribe/components/batch/BatchResponseViewer.tsx
+  391b345307a56a64 1-66
+playground/src/App.tsx
+  391b345307a56a64 2,5-10,18-35,38-56,60
+playground/src/products/scribe/components/batch/KV.tsx
+  391b345307a56a64 1-8
+playground/src/products/scribe/components/batch/StateBadge.tsx
+  391b345307a56a64 1-11
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.5",
+  "base_commit_sha": "26d5e7064c402875b3330004f21716f1923c0e3c",
+  "prompts": {
+    "391b345307a56a64": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "9511a04e-b9a2-425c-98fe-3f19189f4c1a",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "ekaansh",
+      "messages": [],
+      "total_additions": 1751,
+      "total_deletions": 170,
+      "accepted_lines": 1751,
+      "overriden_lines": 0
+    }
+  }
+}
