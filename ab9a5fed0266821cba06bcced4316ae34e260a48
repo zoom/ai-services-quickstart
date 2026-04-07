@@ -1,0 +1,39 @@
+playground/src/components/RecordingInterface.tsx
+  391b345307a56a64 1-99
+playground/src/tabs/FastTab.tsx
+  391b345307a56a64 6-8,147,163-170,174-182,192,207
+playground/src/components/TranscriptPanel.tsx
+  391b345307a56a64 1-23
+playground/src/components/batch/BatchResponseViewer.tsx
+  391b345307a56a64 1-66
+playground/src/tabs/BatchTab.tsx
+  391b345307a56a64 4,7-8,249-254,256-263
+playground/src/index.css
+  391b345307a56a64 39-43
+playground/src/components/batch/JobsList.tsx
+  391b345307a56a64 1-94
+playground/src/lib/utils.ts
+  391b345307a56a64 1-5
+playground/src/components/AudioUploadZone.tsx
+  391b345307a56a64 1-6,8-65
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.3",
+  "base_commit_sha": "ab9a5fed0266821cba06bcced4316ae34e260a48",
+  "prompts": {
+    "391b345307a56a64": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "9511a04e-b9a2-425c-98fe-3f19189f4c1a",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "ekaansh",
+      "messages": [],
+      "total_additions": 398,
+      "total_deletions": 314,
+      "accepted_lines": 397,
+      "overriden_lines": 1
+    }
+  }
+}
