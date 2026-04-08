@@ -1,0 +1,29 @@
+playground/src/App.tsx
+  391b345307a56a64 14-21,23-40,42-47,54,56-57,64-65,67
+playground/src/products/scribe/components/batch/KV.tsx
+  391b345307a56a64 3,5
+playground/src/products/translation/components/TranslationConfigForm.tsx
+  391b345307a56a64 1,7-9,13,35
+playground/src/products/scribe/components/batch/BatchResultVisual.tsx
+  391b345307a56a64 120-124
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.5",
+  "base_commit_sha": "424e231576073a356a6b8b4bdb141448cc886ac1",
+  "prompts": {
+    "391b345307a56a64": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "9511a04e-b9a2-425c-98fe-3f19189f4c1a",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "ekaansh",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 1419,
+      "overriden_lines": 0
+    }
+  }
+}
