@@ -1,0 +1,51 @@
+playground/src/products/translation/components/batch/types.ts
+  391b345307a56a64 4
+playground/src/products/scribe/components/batch/BatchResultVisual.tsx
+  391b345307a56a64 60
+playground/src/lib/utils.ts
+  391b345307a56a64 6-15
+playground/src/components/batch/StateBadge.tsx
+  391b345307a56a64 1-11
+playground/src/components/batch/JobsList.tsx
+  391b345307a56a64 1-95
+playground/src/products/scribe/components/batch/types.ts
+  391b345307a56a64 3,37
+playground/src/lib/batchTypes.ts
+  391b345307a56a64 1-72
+src/routes/translation.ts
+  391b345307a56a64 2,34
+playground/src/products/scribe/tabs/BatchTab.tsx
+  391b345307a56a64 6,8-10,54-57,245
+playground/src/components/batch/stateMeta.ts
+  391b345307a56a64 1-14
+playground/src/products/translation/tabs/BatchTab.tsx
+  391b345307a56a64 5,7-8,52-55
+playground/src/components/batch/BatchResponseViewer.tsx
+  391b345307a56a64 1-71
+src/routes/scribe.ts
+  391b345307a56a64 3,31
+playground/src/components/JsonResult.tsx
+  391b345307a56a64 9,32
+src/util.ts
+  391b345307a56a64 52-59
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.5",
+  "base_commit_sha": "567f21e6d49f37201a4b60f682c242ad82c03646",
+  "prompts": {
+    "391b345307a56a64": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "9511a04e-b9a2-425c-98fe-3f19189f4c1a",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "ekaansh",
+      "messages": [],
+      "total_additions": 342,
+      "total_deletions": 250,
+      "accepted_lines": 1194,
+      "overriden_lines": 5
+    }
+  }
+}
