@@ -1,0 +1,30 @@
+playground/src/products/scribe/tabs/BatchTab.tsx
+  c2489b51b5b371d3 168-176
+src/routers/scribe.ts
+  c2489b51b5b371d3 177-187
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.0",
+  "base_commit_sha": "685348a6e59771ad4331f197ed60ef701263e82d",
+  "prompts": {
+    "c2489b51b5b371d3": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "243469a0-b1f6-4c6f-a29a-d058bb72557a",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "ekaansh",
+      "messages": [],
+      "total_additions": 29,
+      "total_deletions": 9,
+      "accepted_lines": 29,
+      "overriden_lines": 0
+    }
+  },
+  "humans": {
+    "h_a1c6ad3fc176c0": {
+      "author": "ekaansh"
+    }
+  }
+}
