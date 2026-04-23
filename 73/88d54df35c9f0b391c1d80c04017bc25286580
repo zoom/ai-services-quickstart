@@ -1,0 +1,74 @@
+src/trpc.ts
+  391b345307a56a64 1-7
+playground/src/lib/utils.ts
+  391b345307a56a64 16-25
+playground/src/products/scribe/tabs/BatchTab.tsx
+  391b345307a56a64 17,119-123,139,237-238,241
+src/routers/index.ts
+  391b345307a56a64 1-10
+playground/src/lib/trpc.ts
+  391b345307a56a64 1-11
+playground/src/products/translation/tabs/FastTab.tsx
+  391b345307a56a64 2-6,8-11,15-18,20,25-27,29-80,83-86
+src/routers/scribe.ts
+  391b345307a56a64 1,4-5,7,9,64-70,81,95-104,107-112,115-131,133-136,139-155,157-176,178-203
+playground/src/products/scribe/tabs/FastTab.tsx
+  391b345307a56a64 1,6,10,23,32-37,57,62,78,80,87,90,92,94,96,99,103,106-108,111-112,116,131,153-166,192
+playground/src/products/translation/tabs/BatchTab.tsx
+  391b345307a56a64 2-3,6,10-25,59,97-100,102-159,164-221,223-224,227-228,230-235
+.env.example
+  391b345307a56a64 9-10
+Dockerfile
+  3ccb05cc4332267e 1
+src/routers/shared.ts
+  391b345307a56a64 1-2,5-29,31,33-37,39-44,47-49,52-93,95-96,102,110-111,114-120,123-128
+package.json
+  391b345307a56a64 26,32-33
+src/routers/translation.ts
+  391b345307a56a64 1-94
+playground/vite.config.ts
+  391b345307a56a64 17
+playground/package.json
+  391b345307a56a64 14-16
+playground/src/lib/batchTypes.ts
+  391b345307a56a64 63-66,79-83
+playground/src/main.tsx
+  391b345307a56a64 4-5,9-10,12-20
+README.md
+  391b345307a56a64 1,3,5,7-12,14,16-23,27-29,31,37,40,42-46,48,50-57,59,64,66-68,70-72,74,76,78,80-82,84,86,88,90-92,94
+src/index.ts
+  391b345307a56a64 5-6,15,18-19,21,34,38-39
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.2",
+  "base_commit_sha": "7388d54df35c9f0b391c1d80c04017bc25286580",
+  "prompts": {
+    "391b345307a56a64": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "9511a04e-b9a2-425c-98fe-3f19189f4c1a",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "ekaansh",
+      "messages": [],
+      "total_additions": 911,
+      "total_deletions": 836,
+      "accepted_lines": 667,
+      "overriden_lines": 0
+    },
+    "3ccb05cc4332267e": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "1e9c4d8d-f72f-4e17-bb0f-015de7655d69",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": null,
+      "messages": [],
+      "total_additions": 10,
+      "total_deletions": 9,
+      "accepted_lines": 1,
+      "overriden_lines": 0
+    }
+  }
+}

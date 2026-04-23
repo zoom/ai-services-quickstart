@@ -1,0 +1,31 @@
+playground/src/products/translation/tabs/BatchTab.tsx
+  391b345307a56a64 2-3,6,9-11,13-20,22,26-29,47,50,113-116,118-175,180-189,191-219,221-239,244-245,248-249,251-256
+playground/src/products.ts
+  391b345307a56a64 4-5,31-35,38-39
+playground/src/products/scribe/tabs/BatchTab.tsx
+  391b345307a56a64 46
+playground/src/lib/batchTypes.ts
+  391b345307a56a64 57
+playground/src/products/translation/components/batch/types.ts
+  391b345307a56a64 3,6-44
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.2",
+  "base_commit_sha": "637861ff039cf2a357bc037fc2835f03852a7d09",
+  "prompts": {
+    "391b345307a56a64": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "9511a04e-b9a2-425c-98fe-3f19189f4c1a",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "ekaansh",
+      "messages": [],
+      "total_additions": 393,
+      "total_deletions": 217,
+      "accepted_lines": 1,
+      "overriden_lines": 0
+    }
+  }
+}

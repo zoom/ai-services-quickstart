@@ -1,0 +1,23 @@
+playground/src/products/translation/components/TranslationConfigForm.tsx
+  391b345307a56a64 2-6,10-12,14-34,36-49
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.2",
+  "base_commit_sha": "690644c6fe635e087564384bc6bb2b9a0bd46bb6",
+  "prompts": {
+    "391b345307a56a64": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "9511a04e-b9a2-425c-98fe-3f19189f4c1a",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "ekaansh",
+      "messages": [],
+      "total_additions": 393,
+      "total_deletions": 217,
+      "accepted_lines": 1,
+      "overriden_lines": 0
+    }
+  }
+}
