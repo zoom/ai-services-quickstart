@@ -1,0 +1,61 @@
+src/index.ts
+  c888d570ba0eca19 18
+playground/src/products/summarizer/tabs/BatchTab.tsx
+  c888d570ba0eca19 1-297
+playground/src/products.ts
+  c888d570ba0eca19 4-5,33-39
+playground/src/products/summarizer/components/SummarizerConfigForm.tsx
+  c888d570ba0eca19 1-65
+playground/src/products/summarizer/components/SummarizerResult.tsx
+  c888d570ba0eca19 1-93
+playground/src/products/summarizer/components/batch/types.ts
+  c888d570ba0eca19 1-61
+playground/src/lib/batchTypes.ts
+  1187d15c170163b5 10
+src/routers/summarizer.ts
+  c888d570ba0eca19 1-239
+playground/src/products/summarizer/tabs/FastTab.tsx
+  c888d570ba0eca19 1-96
+src/routers/index.ts
+  c888d570ba0eca19 3,8
+playground/src/products/summarizer/lib/constants.ts
+  c888d570ba0eca19 1-45
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.2",
+  "base_commit_sha": "e3bfab41f0d264fb0e4d6d304735153ee6264b78",
+  "prompts": {
+    "1187d15c170163b5": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "94813a66-af4e-4c8d-a396-dfbf0cb16014",
+        "model": "gpt-5.4-medium"
+      },
+      "human_author": "ekaansh",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 1,
+      "overriden_lines": 0
+    },
+    "c888d570ba0eca19": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "a1b7339a-3286-4931-a63b-7d15f8f0d234",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "ekaansh",
+      "messages": [],
+      "total_additions": 2418,
+      "total_deletions": 1,
+      "accepted_lines": 2418,
+      "overriden_lines": 0
+    }
+  },
+  "humans": {
+    "h_a1c6ad3fc176c0": {
+      "author": "ekaansh"
+    }
+  }
+}
