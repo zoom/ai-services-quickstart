@@ -1,0 +1,83 @@
+src/routers/interpreter.ts
+  e9e2abf37c705d80 4,8,35,48
+playground/src/products/scribe/tabs/BatchTab.tsx
+  c06cabd6c1bcd4d8 182-194
+  h_a1c6ad3fc176c0 8,10-11,19,27,35-36,40-41,45-46,50-51,56,62,66-71,80,82,156,236,238,247-251
+src/routers/batchSubmission.ts
+  e9e2abf37c705d80 4-5,36-38,40-42,46,110,115,117,132-134,153,191-200,210
+src/routers/summarizer.ts
+  e9e2abf37c705d80 4,8,54,105
+playground/src/lib/batchTypes.ts
+  e9e2abf37c705d80 64-65
+src/routers/shared.ts
+  e9e2abf37c705d80 24-37,86-98,122-131
+playground/src/products/scribe/components/batch/BatchResultVisual.tsx
+  e9e2abf37c705d80 21-32
+src/routers/scribe.ts
+  e9e2abf37c705d80 4,8-9,68
+playground/src/components/batch/BatchModeSelector.tsx
+  e9e2abf37c705d80 1,3,6,9-12,16
+playground/src/components/batch/formUtils.ts
+  e9e2abf37c705d80 1-94
+playground/src/products/interpreter/tabs/BatchTab.tsx
+  c06cabd6c1bcd4d8 186-198
+  e9e2abf37c705d80 2-5,27,34-35,39-40,44-45,49-50,55,61,65-70,79-83,239,247-251
+  h_a1c6ad3fc176c0 160
+playground/src/products/summarizer/tabs/BatchTab.tsx
+  h_a1c6ad3fc176c0 166
+  e9e2abf37c705d80 2,5-6,28,35-36,40-41,45-46,50-51,56,62,66-71,79-83,251,253,262-266
+  c06cabd6c1bcd4d8 197-209
+playground/src/components/batch/useBatchDetailState.ts
+  e9e2abf37c705d80 1-37
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.4",
+  "base_commit_sha": "099aa2bc7166c0947dc75e08990b950ce8cbf115",
+  "prompts": {
+    "b9a80d7b7630cef5": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "275a0cbd-b4ea-4269-ae7a-88376ce25abb",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "ekaansh",
+      "messages": [],
+      "total_additions": 1388,
+      "total_deletions": 0,
+      "accepted_lines": 1379,
+      "overriden_lines": 2
+    },
+    "c06cabd6c1bcd4d8": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "e15f6b62-e939-49fb-9608-23cfb09a0968",
+        "model": "gpt-5.4-medium"
+      },
+      "human_author": "ekaansh",
+      "messages": [],
+      "total_additions": 48,
+      "total_deletions": 21,
+      "accepted_lines": 48,
+      "overriden_lines": 0
+    },
+    "e9e2abf37c705d80": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "3c64fc15-b722-45b2-98cb-2e9daec8c696",
+        "model": "gpt-5.4-medium"
+      },
+      "human_author": "ekaansh",
+      "messages": [],
+      "total_additions": 362,
+      "total_deletions": 378,
+      "accepted_lines": 324,
+      "overriden_lines": 21
+    }
+  },
+  "humans": {
+    "h_a1c6ad3fc176c0": {
+      "author": "ekaansh"
+    }
+  }
+}
