@@ -1,0 +1,49 @@
+playground/src/products/summarizer/components/batch/types.ts
+  e9e2abf37c705d80 12,36
+playground/src/products/scribe/components/batch/types.ts
+  e9e2abf37c705d80 11,35
+playground/src/products/interpreter/components/batch/types.ts
+  e9e2abf37c705d80 12,36
+src/routers/batchSubmission.ts
+  e9e2abf37c705d80 43,106,120,138,143,148,150,158-171,185-193
+playground/src/products/interpreter/tabs/BatchTab.tsx
+  e9e2abf37c705d80 3,26-32,42,106,128,134,141,149-153,164-169,186,221-226
+  h_a1c6ad3fc176c0 123-127
+playground/src/products/scribe/components/batch/ModeSelector.tsx
+  e9e2abf37c705d80 4-12,19,26
+playground/src/products/scribe/tabs/BatchTab.tsx
+  e9e2abf37c705d80 4,25-31,42,106,122-138,145-148,166,201-206
+playground/src/products/summarizer/tabs/BatchTab.tsx
+  e9e2abf37c705d80 5,27-33,43,112,132-138,144,151,159-163,176-183,199,237-242
+src/routers/interpreter.ts
+  e9e2abf37c705d80 50,69
+src/routers/scribe.ts
+  e9e2abf37c705d80 25,90
+src/routers/summarizer.ts
+  e9e2abf37c705d80 69,126
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.4",
+  "base_commit_sha": "a4e3c9cad7ea09ee01b8b9f331fb1a17f31b4997",
+  "prompts": {
+    "e9e2abf37c705d80": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "3c64fc15-b722-45b2-98cb-2e9daec8c696",
+        "model": "gpt-5.4-medium"
+      },
+      "human_author": "ekaansh",
+      "messages": [],
+      "total_additions": 168,
+      "total_deletions": 30,
+      "accepted_lines": 161,
+      "overriden_lines": 0
+    }
+  },
+  "humans": {
+    "h_a1c6ad3fc176c0": {
+      "author": "ekaansh"
+    }
+  }
+}
