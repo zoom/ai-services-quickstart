@@ -1,0 +1,29 @@
+src/routers/batchSubmission.ts
+  e9e2abf37c705d80 1-185
+src/routers/interpreter.ts
+  e9e2abf37c705d80 3,5,55,61-67
+src/routers/summarizer.ts
+  e9e2abf37c705d80 2-3,5,118-124
+src/routers/scribe.ts
+  e9e2abf37c705d80 2-3,5,82-88
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.4",
+  "base_commit_sha": "acfbfc5811129e518c428aa384ded0eeec891063",
+  "prompts": {
+    "e9e2abf37c705d80": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "3c64fc15-b722-45b2-98cb-2e9daec8c696",
+        "model": "gpt-5.4-medium"
+      },
+      "human_author": "ekaansh",
+      "messages": [],
+      "total_additions": 215,
+      "total_deletions": 258,
+      "accepted_lines": 215,
+      "overriden_lines": 0
+    }
+  }
+}
