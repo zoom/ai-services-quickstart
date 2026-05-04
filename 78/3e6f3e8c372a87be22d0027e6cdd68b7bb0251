@@ -1,0 +1,47 @@
+src/index.ts
+  44a06db5caba9978 16
+playground/src/products/translator/tabs/BatchTab.tsx
+  44a06db5caba9978 12-210
+playground/src/products/translator/lib/constants.ts
+  44a06db5caba9978 1-26
+src/routers/translator.ts
+  44a06db5caba9978 1-86
+playground/src/products.ts
+  44a06db5caba9978 6-7,34-35,38-39
+src/routers/index.ts
+  44a06db5caba9978 3,7
+playground/src/products/translator/components/TranslatorConfigForm.tsx
+  44a06db5caba9978 1-12,14-38
+  h_a1c6ad3fc176c0 13
+playground/src/products/translator/components/batch/types.ts
+  44a06db5caba9978 1-28
+playground/src/products/translator/components/TranslatorResult.tsx
+  44a06db5caba9978 1-85
+playground/src/products/translator/tabs/FastTab.tsx
+  44a06db5caba9978 4-82
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.4",
+  "base_commit_sha": "783e6f3e8c372a87be22d0027e6cdd68b7bb0251",
+  "prompts": {
+    "44a06db5caba9978": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b2d71afc-fb5c-4015-af28-bced16d4444a",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "ekaansh",
+      "messages": [],
+      "total_additions": 769,
+      "total_deletions": 52,
+      "accepted_lines": 602,
+      "overriden_lines": 36
+    }
+  },
+  "humans": {
+    "h_a1c6ad3fc176c0": {
+      "author": "ekaansh"
+    }
+  }
+}
