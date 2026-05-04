@@ -1,0 +1,75 @@
+src/routers/scribe.ts
+  cd855ea7e843b331 5,64
+playground/src/products/summarizer/lib/constants.ts
+  cd855ea7e843b331 60
+src/routers/summarizer.ts
+  cd855ea7e843b331 5,77
+playground/src/products/summarizer/tabs/BatchTab.tsx
+  cd855ea7e843b331 5,9,110,175
+playground/src/products/summarizer/tabs/FastTab.tsx
+  cd855ea7e843b331 69
+playground/src/products/scribe/tabs/BatchTab.tsx
+  cd855ea7e843b331 4,10,102
+playground/src/products/translate/tabs/BatchTab.tsx
+  cd855ea7e843b331 5,8,108
+src/routers/shared.ts
+  391b345307a56a64 33-39,41-48
+  cd855ea7e843b331 14-30,134,159,161,163-167,171,179-183
+  h_a1c6ad3fc176c0 32,40,49-52
+  e9e2abf37c705d80 5-13
+src/routers/translate.ts
+  cd855ea7e843b331 5,47
+playground/src/components/batch/formUtils.ts
+  cd855ea7e843b331 10-12
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.4",
+  "base_commit_sha": "163cbf30d23d47b9467ba444b363844008050804",
+  "prompts": {
+    "391b345307a56a64": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "9511a04e-b9a2-425c-98fe-3f19189f4c1a",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "ekaansh",
+      "messages": [],
+      "total_additions": 393,
+      "total_deletions": 217,
+      "accepted_lines": 157,
+      "overriden_lines": 0
+    },
+    "cd855ea7e843b331": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "66613955-79fe-4fc0-a26b-82636bb913c5",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "ekaansh",
+      "messages": [],
+      "total_additions": 68,
+      "total_deletions": 360,
+      "accepted_lines": 60,
+      "overriden_lines": 0
+    },
+    "e9e2abf37c705d80": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "3c64fc15-b722-45b2-98cb-2e9daec8c696",
+        "model": "gpt-5.4-medium"
+      },
+      "human_author": "ekaansh",
+      "messages": [],
+      "total_additions": 259,
+      "total_deletions": 298,
+      "accepted_lines": 194,
+      "overriden_lines": 0
+    }
+  },
+  "humans": {
+    "h_a1c6ad3fc176c0": {
+      "author": "ekaansh"
+    }
+  }
+}
