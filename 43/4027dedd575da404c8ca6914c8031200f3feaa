@@ -1,0 +1,42 @@
+playground/src/products/translator/tabs/BatchTab.tsx
+  e8908c1997fa30c6 2,24,50-54,78,213-214,223-230
+src/routers/summarizer.ts
+  e8908c1997fa30c6 101,103-104
+src/routers/translator.ts
+  e8908c1997fa30c6 71,73-74
+playground/src/products/summarizer/tabs/BatchTab.tsx
+  e8908c1997fa30c6 2,24,50-54,78,223-224,233-240
+playground/src/components/batch/BatchResponseViewer.tsx
+  e8908c1997fa30c6 3,9-10,13,71-82
+src/routers/scribe.ts
+  e8908c1997fa30c6 88,90-91
+playground/src/components/batch/useBatchDetailState.ts
+  e8908c1997fa30c6 2-3,17-24,38
+playground/src/products/scribe/tabs/BatchTab.tsx
+  e8908c1997fa30c6 13,24,49-53,77,207-208,217-224
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.4",
+  "base_commit_sha": "434027dedd575da404c8ca6914c8031200f3feaa",
+  "prompts": {
+    "e8908c1997fa30c6": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "9a5a402a-b5b6-4f51-9d28-0cbe4862d255",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "ekaansh",
+      "messages": [],
+      "total_additions": 90,
+      "total_deletions": 24,
+      "accepted_lines": 90,
+      "overriden_lines": 0
+    }
+  },
+  "humans": {
+    "h_a1c6ad3fc176c0": {
+      "author": "ekaansh"
+    }
+  }
+}
