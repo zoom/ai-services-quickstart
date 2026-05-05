@@ -1,0 +1,12 @@
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.4",
+  "base_commit_sha": "82cb4f8b77963df71b48bc815c0c624ece0bb9d8",
+  "prompts": {},
+  "humans": {
+    "h_a1c6ad3fc176c0": {
+      "author": "ekaansh"
+    }
+  }
+}
