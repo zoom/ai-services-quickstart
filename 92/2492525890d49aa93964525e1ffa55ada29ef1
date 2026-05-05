@@ -1,0 +1,79 @@
+playground/src/lib/batchTypes.ts
+  391b345307a56a64 1-72
+playground/src/products/scribe/components/batch/BatchResultVisual.tsx
+  391b345307a56a64 60
+playground/src/products/scribe/components/batch/types.ts
+  391b345307a56a64 3,37
+playground/src/products.ts
+  391b345307a56a64 27-28,36-37
+playground/src/products/translation/tabs/BatchTab.tsx
+  391b345307a56a64 5,7-8,52-55
+playground/src/components/batch/stateMeta.ts
+  391b345307a56a64 1-14
+playground/src/components/batch/JobsList.tsx
+  391b345307a56a64 1-95
+src/routes/translation.ts
+  391b345307a56a64 2,34
+playground/src/components/batch/BatchResponseViewer.tsx
+  391b345307a56a64 1-71
+playground/src/components/JsonResult.tsx
+  391b345307a56a64 9,32
+playground/src/products/scribe/tabs/BatchTab.tsx
+  391b345307a56a64 6,8-10,54-57,245
+src/routes/scribe.ts
+  391b345307a56a64 3,31
+playground/src/components/batch/StateBadge.tsx
+  391b345307a56a64 1-11
+playground/src/lib/utils.ts
+  391b345307a56a64 6-15
+src/util.ts
+  391b345307a56a64 52-59
+playground/src/products/translation/components/batch/types.ts
+  391b345307a56a64 4
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.5",
+  "base_commit_sha": "922492525890d49aa93964525e1ffa55ada29ef1",
+  "prompts": {
+    "391b345307a56a64": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "9511a04e-b9a2-425c-98fe-3f19189f4c1a",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "ekaansh",
+      "messages": [],
+      "total_additions": 342,
+      "total_deletions": 250,
+      "accepted_lines": 1170,
+      "overriden_lines": 0
+    },
+    "761e32a86779e693": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c5f0d777-edfc-46b9-bc61-155719e8a7f8",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": null,
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 9,
+      "overriden_lines": 0
+    },
+    "adeb691e101f2088": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "db2245f2-d44f-4b1a-ba76-8941709fcd1b",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "ekaansh <ekaansh.arora@zoom.us>",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 1,
+      "overriden_lines": 0
+    }
+  }
+}

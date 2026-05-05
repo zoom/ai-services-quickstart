@@ -1,0 +1,25 @@
+playground/src/main.tsx
+  391b345307a56a64 3,9-11
+playground/src/App.tsx
+  391b345307a56a64 1,4-5,7-8,25,27,30,36,42,47,49,53,59,72-81
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.5",
+  "base_commit_sha": "e091f34019f6dfd24ea35c9990316e39e056654a",
+  "prompts": {
+    "391b345307a56a64": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "9511a04e-b9a2-425c-98fe-3f19189f4c1a",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "ekaansh",
+      "messages": [],
+      "total_additions": 30,
+      "total_deletions": 17,
+      "accepted_lines": 1226,
+      "overriden_lines": 0
+    }
+  }
+}
