@@ -1,0 +1,28 @@
+playground/src/products/translator/components/TranslatorResult.tsx
+  s_9276a62df29c09::t_b1a2ca664a1717 69-70
+  s_9276a62df29c09::t_cc8ff505ccfa37 53
+  s_9276a62df29c09::t_c4e3c7ae5e4800 32
+playground/src/products/translator/tabs/FastTab.tsx
+  s_9276a62df29c09::t_f4f717378041eb 25
+  s_9276a62df29c09::t_e95ec800c1ea0a 82-83
+playground/src/products/scribe/tabs/FastTab.tsx
+  s_9276a62df29c09::t_a10a27d5bd4b36 112-114
+playground/src/products/scribe/components/TranscriptPanel.tsx
+  s_9276a62df29c09::t_90975d0dde24ab 7-10,14,20-24
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.8",
+  "base_commit_sha": "c0b807ec01ed5775cb108df37e61602f3d27c59b",
+  "prompts": {},
+  "sessions": {
+    "s_9276a62df29c09": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "5ed76dea-7d44-4311-ad49-b98d8c3c10d2",
+        "model": "claude-opus-4-7"
+      },
+      "human_author": "ekaansh <ekaansh68@gmail.com>"
+    }
+  }
+}
