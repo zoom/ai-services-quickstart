@@ -1,0 +1,46 @@
+README.md
+  s_416c6495f8da50::t_17b665b9a770ca 79
+  h_ad177239d5113d 4,51
+  s_416c6495f8da50::t_3bb564edbd10c1 91
+  s_416c6495f8da50::t_fe932921b56abb 85
+  s_416c6495f8da50::t_4f27966b4cf17b 14-15
+  s_416c6495f8da50::t_1c224bc39dc735 55,58
+  s_416c6495f8da50::t_713831665fb3ed 90
+  s_416c6495f8da50::t_f69bfc2390690a 3,12-13
+  s_416c6495f8da50::t_435b36f38ccbbe 5
+playground/src/products/summarizer/lib/constants.ts
+  s_9276a62df29c09::t_23033c2b3c357a 17-25
+.gitignore
+  h_ad177239d5113d 12-13
+.env.example
+  s_416c6495f8da50::t_3f647ba5f55387 5
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.8",
+  "base_commit_sha": "fcc27cbf6865409d35a2ae3c567f4f3a848e972f",
+  "prompts": {},
+  "humans": {
+    "h_ad177239d5113d": {
+      "author": "ekaansh <ekaansh68@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_416c6495f8da50": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "a3cba846-437b-47d7-acd5-85e1f7f9dd39",
+        "model": "claude-opus-4-7"
+      },
+      "human_author": null
+    },
+    "s_9276a62df29c09": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "5ed76dea-7d44-4311-ad49-b98d8c3c10d2",
+        "model": "claude-opus-4-7"
+      },
+      "human_author": null
+    }
+  }
+}
