@@ -1,0 +1,36 @@
+.gitignore
+  h_ad177239d5113d 12-13
+README.md
+  h_ad177239d5113d 4,51
+  s_416c6495f8da50::t_435b36f38ccbbe 5
+  s_416c6495f8da50::t_3bb564edbd10c1 91
+  s_416c6495f8da50::t_1c224bc39dc735 55,58
+  s_416c6495f8da50::t_4f27966b4cf17b 14-15
+  s_416c6495f8da50::t_713831665fb3ed 90
+  s_416c6495f8da50::t_17b665b9a770ca 79
+  s_416c6495f8da50::t_f69bfc2390690a 3,12-13
+  s_416c6495f8da50::t_fe932921b56abb 85
+.env.example
+  s_416c6495f8da50::t_3f647ba5f55387 5
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.8",
+  "base_commit_sha": "90fcf543682b4f1e43ca43f1b81e892c632ec3ca",
+  "prompts": {},
+  "humans": {
+    "h_ad177239d5113d": {
+      "author": "ekaansh <ekaansh68@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_416c6495f8da50": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "a3cba846-437b-47d7-acd5-85e1f7f9dd39",
+        "model": "claude-opus-4-7"
+      },
+      "human_author": null
+    }
+  }
+}
