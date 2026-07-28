@@ -76,6 +76,27 @@ cd playground && npm install && npm run dev
 
 Open `http://localhost:5173`.
 
+## Docker
+
+Build and run the API server:
+
+```bash
+docker build -t scribe-quickstart .
+docker run --rm --env-file .env -p 4000:4000 scribe-quickstart
+```
+
+The image runs the backend on port `4000`, including `/trpc`, the webhook endpoints, and the `/live/scribe` WebSocket relay. The `.env` file is excluded from the image; `--env-file` supplies credentials securely at runtime.
+
+The playground is not included in the backend image. To use the UI, run it separately while the container is running:
+
+```bash
+cd playground
+npm install
+npm run dev
+```
+
+Then open `http://localhost:5173`. If you change `PORT` in `.env`, update the container port mapping and the playground proxy target accordingly.
+
 ## Webhooks
 
 The server exposes three webhook endpoints for Zoom batch job notifications: `POST /webhooks/scribe`, `POST /webhooks/translator`, and `POST /webhooks/summarizer`. All three require a publicly reachable HTTPS URL — use [cloudflared](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/do-more-with-tunnels/trycloudflare/) for local development:

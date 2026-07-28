@@ -3,8 +3,8 @@ import crypto from 'crypto'
 import dotenv from 'dotenv'
 import express from 'express'
 import { createExpressMiddleware } from '@trpc/server/adapters/express'
-import { attachScribeLiveRelay } from './live/scribe.js'
-import { appRouter } from './routers/index.js'
+import { attachScribeLiveRelay } from './live/scribe.ts'
+import { appRouter } from './routers/index.ts'
 dotenv.config()
 
 const app = express()

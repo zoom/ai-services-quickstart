@@ -1,6 +1,6 @@
 import type { Server } from 'node:http'
 import { WebSocket, WebSocketServer } from 'ws'
-import { generateJWT } from '../util.js'
+import { generateJWT } from '../util.ts'
 
 const SCRIBE_LIVE_PATH = '/live/scribe'
 const SCRIBE_LIVE_ENDPOINT = 'wss://api.zoom.us/v2/aiservices/scribe/live'
