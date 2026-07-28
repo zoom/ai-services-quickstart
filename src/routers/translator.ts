@@ -7,7 +7,7 @@ import { submitBatchJob, type JobTemplate } from './shared.js'
 const makeTranslatorRequest = createApiRequest(`${ZOOM_API_BASE_URL}/aiservices/translator`)
 const makeTranslatorBatchRequest = async (path: string, init?: RequestInit) => jobResponseSchema.parse(await makeTranslatorRequest(path, init))
 
-const languageCodes = ['en-US', 'zh-CN', 'ja-JP', 'ko-KR', 'es-ES', 'fr-FR', 'de-DE', 'pt-BR', 'it-IT'] as const
+const languageCodes = ['en-US', 'zh-CN', 'zh-TW', 'ja-JP', 'ko-KR', 'es-ES', 'fr-FR', 'de-DE', 'pt-BR', 'it-IT'] as const
 const translatorConfigSchema = z.object({ source_language: z.enum(languageCodes), target_languages: z.array(z.enum(languageCodes)).min(1).max(1), })
 
 const translateResponseSchema = z.object({
