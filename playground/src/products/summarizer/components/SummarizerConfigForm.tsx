@@ -2,11 +2,9 @@ import { Field } from '../../../components/ui'
 import { selectCls } from '../../../lib/constants'
 import {
     LANGUAGE_OPTIONS,
-    OUTPUT_FORMAT_OPTIONS,
     TASK_OPTIONS,
     type FastSummarizerConfig,
     type SummarizerLanguage,
-    type SummarizerOutputFormat,
     type SummarizerTask,
 } from '../lib/constants'
 
@@ -29,18 +27,6 @@ export function SummarizerConfigForm({
                         <option key={option.value} value={option.value}>
                             {option.label} - {option.hint}
                         </option>
-                    ))}
-                </select>
-            </Field>
-
-            <Field label="Output Format" hint="Structured for automation or text for quick reading">
-                <select
-                    className={selectCls}
-                    value={value.output_format}
-                    onChange={e => onChange({ ...value, output_format: e.target.value as SummarizerOutputFormat })}
-                >
-                    {OUTPUT_FORMAT_OPTIONS.map(option => (
-                        <option key={option.value} value={option.value}>{option.label}</option>
                     ))}
                 </select>
             </Field>

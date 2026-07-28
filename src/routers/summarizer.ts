@@ -11,7 +11,6 @@ const MAX_TEXT_BYTES = 96 * 1024
 
 const supportedLanguages = ['en-us', 'zh-cn', 'ja-jp', 'es-es', 'fr-fr', 'de-de', 'pt-br', 'it-it', 'ar-sa', 'ar-ae'] as const
 const supportedTasks = ['recap', 'action_items', 'summary', 'full_summary'] as const
-const supportedFormats = ['structured_json', 'text'] as const
 const supportedSummaryTypes = ['conversation'] as const
 
 function omitEmptyStrings<T extends Record<string, unknown>>(value: T): Partial<T> {
@@ -20,7 +19,6 @@ function omitEmptyStrings<T extends Record<string, unknown>>(value: T): Partial<
 
 const summarizerFastConfigSchema = z.object({
     task: z.enum(supportedTasks),
-    output_format: z.enum(supportedFormats).default('structured_json'),
     language: z.enum(supportedLanguages).default('en-us'),
     summary_type: z.enum(supportedSummaryTypes).default('conversation'),
 })

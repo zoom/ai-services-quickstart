@@ -7,11 +7,6 @@ export const TASK_OPTIONS = [
     { value: 'full_summary', label: 'Full Summary', hint: 'Recap, summary, and action items' },
 ] as const
 
-export const OUTPUT_FORMAT_OPTIONS = [
-    { value: 'structured_json', label: 'Structured JSON' },
-    { value: 'text', label: 'Text' },
-] as const
-
 export const LANGUAGE_OPTIONS = [
     { value: 'en-us', label: 'English (US)' },
     { value: 'zh-cn', label: 'Chinese (Simplified)' },
@@ -26,12 +21,10 @@ export const LANGUAGE_OPTIONS = [
 ] as const
 
 export type SummarizerTask = typeof TASK_OPTIONS[number]['value']
-export type SummarizerOutputFormat = typeof OUTPUT_FORMAT_OPTIONS[number]['value']
 export type SummarizerLanguage = typeof LANGUAGE_OPTIONS[number]['value']
 
 export type FastSummarizerConfig = {
     task: SummarizerTask
-    output_format: SummarizerOutputFormat
     language: SummarizerLanguage
     summary_type: 'conversation'
 }
@@ -40,7 +33,6 @@ export type BatchSummarizerConfig = FastSummarizerConfig
 
 export const defaultFastSummarizerConfig: FastSummarizerConfig = {
     task: 'summary',
-    output_format: 'structured_json',
     language: 'en-us',
     summary_type: 'conversation',
 }
