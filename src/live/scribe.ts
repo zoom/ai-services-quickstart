@@ -39,7 +39,14 @@ export function attachScribeLiveRelay(server: Server) {
         const fail = (message: string, code = 1011) => {
             console.error('[live]', message)
             if (client.readyState === WebSocket.OPEN) {
-                client.send(JSON.stringify({ type: 'error', error: { message } }))
+                client.send(JSON.stringify({
+                    type: 'error',
+                    error: {
+                        code: 'relay_error',
+                        message,
+                        fatal: true,
+                    },
+                }))
                 client.close(code)
             }
         }

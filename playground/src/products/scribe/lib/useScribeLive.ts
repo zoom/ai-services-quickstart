@@ -48,8 +48,8 @@ export function useScribeLive() {
         if (ws && ws.readyState === WebSocket.OPEN) {
             setStatus('stopping')
             try { ws.send(JSON.stringify({ type: 'session.close' })) } catch { /* ignore */ }
-            // Give the server a moment to flush any final transcript before closing.
-            setTimeout(() => { try { ws.close() } catch { /* ignore */ } }, 1200)
+            // The server normally acknowledges with session.closed. This is a fallback.
+            setTimeout(() => { try { ws.close() } catch { /* ignore */ } }, 3000)
         } else {
             // Invalidate getUserMedia/AudioWorklet setup that may still be awaiting,
             // and abort a WebSocket whose browser handshake has not completed.
@@ -143,8 +143,7 @@ export function useScribeLive() {
                 }
                 ws.send(JSON.stringify({
                     type: 'session.update',
-                    input_audio_format: 'pcm16',
-                    turn_detection: { threshold: 0.5, prefix_padding_ms: 300, silence_duration_ms: 350, min_pause_duration_ms: 100 },
+                    audio: { format: 'pcm16' },
                     language,
                 }))
                 // Stay "connecting" until the relay confirms Zoom is connected (relay.ready).
@@ -164,19 +163,28 @@ export function useScribeLive() {
 
                 if (type === 'relay.ready') { setStatus('recording'); return }
 
-                // Don't clutter the panel with audio/speech start & stop markers.
-                if (!(type && /(started|stopped)$/i.test(type))) recordEvent(JSON.stringify(event, null, 2), type)
+                recordEvent(JSON.stringify(event, null, 2), type)
 
                 if (event.type === 'transcription.completed') {
                     const t = String(event.transcript ?? '').trim()
                     if (t) setSegments(prev => [...prev, t])
                     setInterim('')
                     if (typeof event.transcription_latency_ms === 'number') setLatencyMs(event.transcription_latency_ms)
+                } else if (event.type === 'transcription.delta') {
+                    setInterim(event.delta ?? '')
                 } else if (event.type === 'error') {
-                    setError(event.error?.message ?? JSON.stringify(event))
-                } else {
-                    const t = event.transcript ?? event.text ?? event.delta
-                    if (typeof t === 'string' && t) setInterim(t)
+                    const detail = event.error?.message ?? JSON.stringify(event)
+                    setError(event.error?.code ? `${event.error.code}: ${detail}` : detail)
+                    if (event.error?.fatal) {
+                        setStatus('error')
+                        teardownAudio()
+                        ws.close()
+                    }
+                } else if (event.type === 'session.closed') {
+                    setInterim('')
+                    setStatus('idle')
+                    teardownAudio()
+                    ws.close(1000)
                 }
             }
 
@@ -244,11 +252,19 @@ export type ScribeEventRecord = {
 
 type ScribeWsEvent = {
     type?: string
+    session_id?: string
+    item_id?: string
     transcript?: string
-    text?: string
     delta?: string
+    audio_start_ms?: number
+    audio_end_ms?: number
     transcription_latency_ms?: number
-    error?: { message?: string }
+    reason?: string
+    error?: {
+        code?: string
+        message?: string
+        fatal?: boolean
+    }
 }
 
 type WindowWithWebkitAudio = Window & typeof globalThis & { webkitAudioContext?: typeof AudioContext }

@@ -114,7 +114,7 @@ export function LiveTab() {
                     <p className="relative mt-4 text-center text-xs text-gray-400">
                         {connecting ? 'Opening the stream to Zoom Scribe…'
                             : status === 'stopping' ? 'Flushing the final transcript…'
-                                : live ? 'Speak — utterances finalize as you pause.'
+                                : live ? 'Speak — completed segments appear as they arrive.'
                                     : 'Tap the mic to stream your microphone in real time.'}
                     </p>
 
@@ -149,7 +149,7 @@ export function LiveTab() {
                         className="min-h-44 max-h-[42vh] overflow-auto text-[15px] leading-8 text-gray-800 wrap-break-word scroll-smooth"
                     >
                         {segments.length === 0 && !interim ? (
-                            <span className="text-gray-300 select-none italic">Your words will appear here as you speak…</span>
+                            <span className="text-gray-300 select-none italic">Completed segments will appear here as you speak…</span>
                         ) : (
                             <p className="[text-wrap:pretty]">
                                 {segments.map((s, i) => (
@@ -163,7 +163,7 @@ export function LiveTab() {
                     </div>
                     {segments.length > 0 && (
                         <div className="mt-3 pt-3 border-t border-gray-100 text-xs text-gray-400 tabular-nums">
-                            {segments.length} utterance{segments.length === 1 ? '' : 's'}
+                            {segments.length} segment{segments.length === 1 ? '' : 's'}
                         </div>
                     )}
                 </Card>
