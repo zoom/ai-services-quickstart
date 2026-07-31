@@ -1,8 +1,8 @@
 import { z } from 'zod'
-import { router, procedure } from '../trpc.js'
-import { createApiRequest, ZOOM_API_BASE_URL } from '../util.js'
-import { filesResponseSchema, jobResponseSchema, listResponseSchema, makeBatchSubmitSchema, resolveJobIO } from './shared.js'
-import { submitBatchJob, type JobTemplate } from './shared.js'
+import { router, procedure } from '../trpc.ts'
+import { createApiRequest, ZOOM_API_BASE_URL } from '../util.ts'
+import { filesResponseSchema, jobResponseSchema, listResponseSchema, makeBatchSubmitSchema, resolveJobIO } from './shared.ts'
+import { submitBatchJob, type JobTemplate } from './shared.ts'
 
 const makeSummarizerRequest = createApiRequest(`${ZOOM_API_BASE_URL}/aiservices/summarizer`)
 const makeSummarizerBatchRequest = async (path: string, init?: RequestInit) => jobResponseSchema.parse(await makeSummarizerRequest(path, init))

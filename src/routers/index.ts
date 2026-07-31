@@ -1,7 +1,7 @@
-import { router } from '../trpc.js'
-import { scribeRouter } from './scribe.js'
-import { translatorRouter } from './translator.js'
-import { summarizerRouter } from './summarizer.js'
+import { router } from '../trpc.ts'
+import { scribeRouter } from './scribe.ts'
+import { translatorRouter } from './translator.ts'
+import { summarizerRouter } from './summarizer.ts'
 
 export const appRouter = router({
     translator: translatorRouter,

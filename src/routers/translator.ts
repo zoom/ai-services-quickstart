@@ -1,13 +1,13 @@
 import { z } from 'zod'
-import { router, procedure } from '../trpc.js'
-import { ZOOM_API_BASE_URL, createApiRequest } from '../util.js'
-import { filesResponseSchema, jobResponseSchema, listResponseSchema, makeBatchSubmitSchema, resolveJobIO } from './shared.js'
-import { submitBatchJob, type JobTemplate } from './shared.js'
+import { router, procedure } from '../trpc.ts'
+import { ZOOM_API_BASE_URL, createApiRequest } from '../util.ts'
+import { filesResponseSchema, jobResponseSchema, listResponseSchema, makeBatchSubmitSchema, resolveJobIO } from './shared.ts'
+import { submitBatchJob, type JobTemplate } from './shared.ts'
 
 const makeTranslatorRequest = createApiRequest(`${ZOOM_API_BASE_URL}/aiservices/translator`)
 const makeTranslatorBatchRequest = async (path: string, init?: RequestInit) => jobResponseSchema.parse(await makeTranslatorRequest(path, init))
 
-const languageCodes = ['en-US', 'zh-CN', 'ja-JP', 'ko-KR', 'es-ES', 'fr-FR', 'de-DE', 'pt-BR', 'it-IT'] as const
+const languageCodes = ['en-US', 'zh-CN', 'zh-TW', 'ja-JP', 'ko-KR', 'es-ES', 'fr-FR', 'de-DE', 'pt-BR', 'it-IT'] as const
 const translatorConfigSchema = z.object({ source_language: z.enum(languageCodes), target_languages: z.array(z.enum(languageCodes)).min(1).max(1), })
 
 const translateResponseSchema = z.object({

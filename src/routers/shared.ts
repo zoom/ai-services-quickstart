@@ -1,6 +1,6 @@
 import { z } from 'zod'
-import { getEnvAwsCredentials, isS3, withAwsAuth } from '../util.js'
-import type { AwsCredentials } from '../util.js'
+import { getEnvAwsCredentials, isS3, withAwsAuth } from '../util.ts'
+import type { AwsCredentials } from '../util.ts'
 
 export function makeBatchSubmitSchema<TConfig extends z.ZodTypeAny>(configSchema: TConfig) {
     return z.object({

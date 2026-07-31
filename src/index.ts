@@ -3,7 +3,8 @@ import crypto from 'crypto'
 import dotenv from 'dotenv'
 import express from 'express'
 import { createExpressMiddleware } from '@trpc/server/adapters/express'
-import { appRouter } from './routers/index.js'
+import { attachScribeLiveRelay } from './live/scribe.ts'
+import { appRouter } from './routers/index.ts'
 dotenv.config()
 
 const app = express()
@@ -46,4 +47,5 @@ function handleWebhook(req: express.Request, res: express.Response) {
     res.json({ status: 'received' })
 }
 
-app.listen(port, () => console.log(`AI Services API listening on port ${port}`))
+const server = app.listen(port, () => console.log(`AI Services API listening on port ${port}`))
+attachScribeLiveRelay(server)

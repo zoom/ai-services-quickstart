@@ -7,23 +7,25 @@ A Node.js/Express + React playground for the [Zoom AI Services APIs](https://dev
 
 | Product | Modes | Description |
 |---|---|---|
-| **Scribe** | Fast (Sync) | Upload or record audio/video, get a transcript immediately |
+| **Scribe** | Fast  | Upload or record audio/video, get a transcript immediately |
+| **Scribe** | Live  | Stream your microphone and see transcripts in real time over a WebSocket |
 | **Scribe** | Batch | Process thousands of S3 files; auto-splits jobs >1,000 files |
-| **Translator** | Fast (Sync) | Translate up to 4,000 characters into one of 9 supported languages |
+| **Translator** | Fast  | Translate up to 4,000 characters into one of 9 supported languages |
 | **Translator** | Batch | Translate `.txt` files stored in S3 |
-| **Summarizer** | Fast (Sync) | Summarize a transcript (up to 96 KB) — recap, action items, summary, or full summary |
+| **Summarizer** | Fast  | Summarize a transcript (up to 96 KB) — recap, action items, summary, or full summary |
 | **Summarizer** | Batch | Summarize transcripts stored in S3 |
 
 ## Architecture
 
 ```
 playground/          Vite + React + tRPC client (port 5173)
-    └── /trpc  ──▶  Express + tRPC server (port 4000)
-                        ├── Zoom AI Services API
-                        └── AWS S3 (for batch jobs)
+    ├── /trpc         ──▶  Express + tRPC server (port 4000)
+    │                          ├── Zoom AI Services API
+    │                          └── AWS S3 (for batch jobs)
+    └── /live/scribe  ──▶  WebSocket relay (same server) ──▶ Zoom Scribe live ASR
 ```
 
-The playground proxies `/trpc` to the Express server. All Zoom API calls happen server-side; the browser never touches Zoom credentials.
+The playground proxies `/trpc` (REST) and `/live/scribe` (WebSocket) to the Express server. All Zoom calls happen server-side; the browser never touches Zoom credentials. For Live mode the browser can't set the `Authorization` header on a WebSocket, so the server relays mic audio up and transcription events down, injecting a fresh JWT.
 
 ## Prerequisites
 
@@ -73,6 +75,27 @@ cd playground && npm install && npm run dev
 ```
 
 Open `http://localhost:5173`.
+
+## Docker
+
+Build and run the API server:
+
+```bash
+docker build -t scribe-quickstart .
+docker run --rm --env-file .env -p 4000:4000 scribe-quickstart
+```
+
+The image runs the backend on port `4000`, including `/trpc`, the webhook endpoints, and the `/live/scribe` WebSocket relay. The `.env` file is excluded from the image; `--env-file` supplies credentials securely at runtime.
+
+The playground is not included in the backend image. To use the UI, run it separately while the container is running:
+
+```bash
+cd playground
+npm install
+npm run dev
+```
+
+Then open `http://localhost:5173`. If you change `PORT` in `.env`, update the container port mapping and the playground proxy target accordingly.
 
 ## Webhooks
 
