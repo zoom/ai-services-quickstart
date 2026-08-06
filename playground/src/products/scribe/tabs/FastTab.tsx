@@ -232,7 +232,11 @@ export function FastTab() {
                     {busy && <Spinner />}
                     {busy ? 'Transcribing...' : '\u25B6 Transcribe'}
                 </button>
-                <TranscriptPanel result={result} displayText={displayText} />
+                <TranscriptPanel
+                    result={result}
+                    displayText={displayText}
+                    segments={transcribeMutation.data?.result?.segments}
+                />
                 <JsonResult data={busy ? null : (transcribeMutation.data ?? null)} loading={busy} />
             </div>
         </div>

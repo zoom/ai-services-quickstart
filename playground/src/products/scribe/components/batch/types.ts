@@ -15,7 +15,7 @@ export type BatchFormState = BaseBatchFormState<AsrConfig, OutputLayout>
 
 export const defaultBatch: BatchFormState = {
     ...defaultBatchFormStateBase,
-    config: { language: 'en-US', channel_separation: false },
+    config: { language: 'en-US', channel_separation: false, diarization: false },
 }
 
 export const MODE_DESCRIPTIONS: Record<InputMode, BatchModeDescription> = {

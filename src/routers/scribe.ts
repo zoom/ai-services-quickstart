@@ -6,7 +6,15 @@ import { submitBatchJob, type JobTemplate } from './shared.ts'
 
 const makeScribeRequest = createApiRequest(`${ZOOM_API_BASE_URL}/aiservices/scribe`)
 const makeScribeBatchRequest = async (path: string, init?: RequestInit) => jobResponseSchema.parse(await makeScribeRequest(path, init))
-const batchSubmitSchema = makeBatchSubmitSchema(z.record(z.string(), z.unknown()).optional())
+const scribeConfigSchema = z.object({
+    language: z.string(),
+    channel_separation: z.boolean(),
+    diarization: z.boolean(),
+}).refine(config => !(config.channel_separation && config.diarization), {
+    message: 'Channel separation and diarization cannot both be enabled.',
+    path: ['diarization'],
+})
+const batchSubmitSchema = makeBatchSubmitSchema(scribeConfigSchema.optional())
 
 const transcribeResponseSchema = z.object({
     request_id: z.string().optional(),
@@ -36,10 +44,7 @@ export const scribeRouter = router({
     transcribe: procedure
         .input(z.object({
             file: z.string(),
-            config: z.object({
-                language: z.string(),
-                channel_separation: z.boolean(),
-            }),
+            config: scribeConfigSchema,
         }))
         .mutation(async ({ input }) => {
             const data = await makeScribeRequest('/transcribe', {
