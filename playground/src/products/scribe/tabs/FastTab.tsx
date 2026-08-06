@@ -9,11 +9,22 @@ import { RecordingInterface } from '../components/RecordingInterface'
 import { TranscriptPanel } from '../components/TranscriptPanel'
 import { trpc } from '../../../lib/trpc'
 
-type InputMode = 'upload' | 'record'
+type InputMode = 'upload' | 'url' | 'record'
+
+function isValidFileUrl(value: string) {
+    try {
+        const url = new URL(value)
+        return url.protocol === 'http:' || url.protocol === 'https:'
+    } catch {
+        return false
+    }
+}
 
 export function FastTab() {
     const [config, setConfig] = useState<AsrConfig>(defaultAsrConfig)
     const [audioUrl, setAudioUrl] = useState<string | null>(null)
+    const [fileUrl, setFileUrl] = useState('')
+    const [selectedFile, setSelectedFile] = useState<File | null>(null)
     const [fileName, setFileName] = useState<string | null>(null)
     const [dragging, setDragging] = useState(false)
     const [displayText, setDisplayText] = useState<string | false>(false)
@@ -44,6 +55,7 @@ export function FastTab() {
 
     const handleFile = (file: File | undefined) => {
         if (!file) return
+        setSelectedFile(file)
         setFileName(file.name)
         setAudioUrl(URL.createObjectURL(file))
         setRecordedBlob(null)
@@ -93,21 +105,31 @@ export function FastTab() {
         e.preventDefault()
         setDisplayText(false)
 
+        if (inputMode === 'url') {
+            const url = fileUrl.trim()
+            if (!isValidFileUrl(url)) return
+            transcribeMutation.mutate({ file: url, config })
+            return
+        }
+
         let blob: Blob | undefined
         if (inputMode === 'record') {
             if (!recordedBlob) return
             blob = recordedBlob
         } else {
-            const file = fileRef.current?.files?.[0]
-            if (!file) return
-            blob = file
+            if (!selectedFile) return
+            blob = selectedFile
         }
 
         const dataUri = await readFileAsDataUri(blob)
         transcribeMutation.mutate({ file: dataUri, config })
     }
 
-    const canSubmit = inputMode === 'record' ? !!recordedBlob : true
+    const canSubmit = inputMode === 'record'
+        ? !!recordedBlob
+        : inputMode === 'url'
+            ? isValidFileUrl(fileUrl.trim())
+            : !!selectedFile
     const busy = transcribeMutation.isPending
     const result = busy
         ? 'loading'
@@ -122,6 +144,7 @@ export function FastTab() {
                     <div className="flex rounded-lg bg-gray-100 p-0.5 mb-4">
                         {([
                             ['upload', 'Upload File', '↑'],
+                            ['url', 'File URL', '🔗'],
                             ['record', 'Record Audio', '●'],
                         ] as const).map(([mode, label, icon]) => (
                             <button
@@ -149,6 +172,25 @@ export function FastTab() {
                             audioUrl={audioUrl}
                             onFile={handleFile}
                         />
+                    )}
+
+                    {inputMode === 'url' && (
+                        <div>
+                            <label htmlFor="scribe-file-url" className="block text-xs font-medium text-gray-600 mb-1.5">
+                                Public audio or video file URL
+                            </label>
+                            <input
+                                id="scribe-file-url"
+                                type="url"
+                                value={fileUrl}
+                                onChange={e => setFileUrl(e.target.value)}
+                                placeholder="https://example.com/audio.mp3"
+                                className="w-full px-3 py-2.5 rounded-lg text-sm text-gray-900 bg-white border border-gray-200 focus:outline-none focus:border-zoom-blue/60 focus:ring-1 focus:ring-zoom-blue/30 placeholder:text-gray-400 transition-all duration-150"
+                            />
+                            <p className="mt-1.5 text-xs text-gray-500">
+                                The URL must be publicly accessible over HTTP or HTTPS.
+                            </p>
+                        </div>
                     )}
 
                     {inputMode === 'record' && (
