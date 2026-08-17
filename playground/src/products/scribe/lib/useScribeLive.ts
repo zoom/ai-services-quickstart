@@ -7,7 +7,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
  */
 export function useScribeLive() {
     const [status, setStatus] = useState<ScribeStatus>('idle')
-    const [segments, setSegments] = useState<string[]>([])
+    const [segments, setSegments] = useState<ScribeSegment[]>([])
     const [interim, setInterim] = useState('')
     const [error, setError] = useState<string | null>(null)
     const [latencyMs, setLatencyMs] = useState<number | null>(null)
@@ -63,7 +63,7 @@ export function useScribeLive() {
         teardownAudio()
     }, [teardownAudio])
 
-    const start = useCallback(async (language: string) => {
+    const start = useCallback(async (language: string, diarize = false) => {
         const sessionId = (sessionIdRef.current += 1)
         setError(null)
         setSegments([])
@@ -145,6 +145,7 @@ export function useScribeLive() {
                     type: 'session.update',
                     audio: { format: 'pcm16' },
                     language,
+                    ...(diarize && { transcription: { enable_diarization: true } }),
                 }))
                 // Stay "connecting" until the relay confirms Zoom is connected (relay.ready).
             }
@@ -167,7 +168,7 @@ export function useScribeLive() {
 
                 if (event.type === 'transcription.completed') {
                     const t = String(event.transcript ?? '').trim()
-                    if (t) setSegments(prev => [...prev, t])
+                    if (t) setSegments(prev => [...prev, { text: t, speaker: event.speaker }])
                     setInterim('')
                     if (typeof event.transcription_latency_ms === 'number') setLatencyMs(event.transcription_latency_ms)
                 } else if (event.type === 'transcription.delta') {
@@ -241,6 +242,8 @@ export function useScribeLive() {
     return { status, segments, interim, error, latencyMs, events, start, stop, clear }
 }
 
+export type ScribeSegment = { text: string; speaker?: string }
+
 export type ScribeStatus = 'idle' | 'connecting' | 'recording' | 'stopping' | 'error'
 
 export type ScribeEventRecord = {
@@ -255,6 +258,7 @@ type ScribeWsEvent = {
     session_id?: string
     item_id?: string
     transcript?: string
+    speaker?: string
     delta?: string
     audio_start_ms?: number
     audio_end_ms?: number

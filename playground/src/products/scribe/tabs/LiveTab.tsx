@@ -38,6 +38,7 @@ function Waveform({ live }: { live: boolean }) {
 
 export function LiveTab() {
     const [language, setLanguage] = useState('en-US')
+    const [diarize, setDiarize] = useState(false)
     const { status, segments, interim, error, latencyMs, events, start, stop, clear } = useScribeLive()
 
     const live = status === 'recording'
@@ -86,7 +87,7 @@ export function LiveTab() {
                     <div className="relative flex items-center justify-center gap-4">
                         <button
                             type="button"
-                            onClick={live || connecting ? stop : () => start(language)}
+                            onClick={live || connecting ? stop : () => start(language, diarize)}
                             disabled={status === 'stopping'}
                             aria-label={live || connecting ? 'Stop transcription' : 'Start transcription'}
                             className={[
@@ -132,6 +133,33 @@ export function LiveTab() {
                         </div>
                         <button
                             type="button"
+                            role="checkbox"
+                            aria-checked={diarize}
+                            disabled={active}
+                            onClick={() => setDiarize(v => !v)}
+                            className={[
+                                'mb-0.5 flex items-center gap-2 rounded-lg border px-3 py-2 text-left transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-zoom-blue/25 disabled:opacity-40 disabled:cursor-not-allowed',
+                                diarize
+                                    ? 'border-zoom-blue bg-zoom-blue/5 shadow-sm'
+                                    : 'border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50',
+                            ].join(' ')}
+                        >
+                            <span className={[
+                                'flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded border',
+                                diarize ? 'border-zoom-blue bg-zoom-blue' : 'border-gray-300',
+                            ].join(' ')}>
+                                {diarize && (
+                                    <svg className="h-2.5 w-2.5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
+                                        <path d="M20 6 9 17l-5-5" />
+                                    </svg>
+                                )}
+                            </span>
+                            <span className={diarize ? 'text-xs font-semibold text-gray-800' : 'text-xs font-medium text-gray-700'}>
+                                Speaker diarization
+                            </span>
+                        </button>
+                        <button
+                            type="button"
                             onClick={clear}
                             disabled={active || (segments.length === 0 && !interim && events.length === 0)}
                             className="mb-0.5 px-3.5 py-2 rounded-lg text-xs font-medium text-gray-500 hover:text-gray-700 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
@@ -151,9 +179,14 @@ export function LiveTab() {
                         {segments.length === 0 && !interim ? (
                             <span className="text-gray-300 select-none italic">Completed segments will appear here as you speak…</span>
                         ) : (
-                            <p className="[text-wrap:pretty]">
+                            <p className="[text-wrap:pretty] whitespace-pre-wrap">
                                 {segments.map((s, i) => (
-                                    <span key={i} style={{ animation: 'riseIn .35s ease both' }}>{s} </span>
+                                    <span key={i} style={{ animation: 'riseIn .35s ease both' }}>
+                                        {s.speaker && s.speaker !== segments[i - 1]?.speaker && (
+                                            <span className="font-sans font-semibold text-zoom-blue">{i > 0 && '\n'}{s.speaker}: </span>
+                                        )}
+                                        {s.text}{' '}
+                                    </span>
                                 ))}
                                 {interim && (
                                     <span className="text-zoom-blue/70" style={{ animation: 'breathe 1.6s ease-in-out infinite' }}>{interim}</span>
