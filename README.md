@@ -3,6 +3,11 @@
 A Node.js/Express + React playground for the [Zoom AI Services APIs](https://developers.zoom.us/docs/ai-services/). Test **Scribe** (speech-to-text), **Translator**, and **Summarizer** through a web UI backed by a tRPC server that handles JWT authentication and all API communication.
 ![screenshot of the playground](https://github.com/user-attachments/assets/92ce3a67-b9c1-4709-9c37-e0396e2ea249)
 
+
+
+| Railway | Render | 
+|:-:|:-:|
+| [![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/zoom-ai-services-playground?referralCode=HTPdHX&utm_medium=integration&utm_source=template&utm_campaign=generic) | [![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/zoom/ai-services-quickstart) |
 ## Products
 
 | Product | Modes | Description |
@@ -36,8 +41,8 @@ The playground proxies `/trpc` (REST) and `/live/scribe` (WebSocket) to the Expr
 ## Setup
 
 ```bash
-git clone https://github.com/zoom/scribe-quickstart.git
-cd scribe-quickstart
+git clone https://github.com/zoom/ai-services-quickstart.git
+cd ai-services-quickstart
 npm install
 cp .env.example .env
 ```
@@ -81,8 +86,8 @@ Open `http://localhost:5173`.
 Build and run the API server:
 
 ```bash
-docker build -t scribe-quickstart .
-docker run --rm --env-file .env -p 4000:4000 scribe-quickstart
+docker build -t ai-services-quickstart .
+docker run --rm --env-file .env -p 4000:4000 ai-services-quickstart
 ```
 
 The image runs the backend on port `4000`, including `/trpc`, the webhook endpoints, and the `/live/scribe` WebSocket relay. The `.env` file is excluded from the image; `--env-file` supplies credentials securely at runtime.

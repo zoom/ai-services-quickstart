@@ -1,11 +1,9 @@
 services:
   - type: web
-    name: Zoom Scribe API Quickstart
+    name: ai-services-quickstart
     runtime: node
-    buildCommand: npm install
+    buildCommand: npm install && npm --prefix playground install && npm --prefix playground run build
     startCommand: npm start
-    repo: https://github.com/zoom/scribe-quickstart
-    rootDir: .
     plan: free
     envVars:
       - key: ZOOM_API_KEY

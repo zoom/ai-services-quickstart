@@ -2,6 +2,8 @@ import cors from 'cors'
 import crypto from 'crypto'
 import dotenv from 'dotenv'
 import express from 'express'
+import fs from 'fs'
+import path from 'path'
 import { createExpressMiddleware } from '@trpc/server/adapters/express'
 import { attachScribeLiveRelay } from './live/scribe.ts'
 import { appRouter } from './routers/index.ts'
@@ -22,6 +24,15 @@ app.post('/webhooks/summarizer', express.raw({ type: 'application/json' }), hand
 app.use(express.json({ limit: '150mb' }))
 
 app.use('/trpc', createExpressMiddleware({ router: appRouter }))
+
+// Single-origin deploy: serve the built playground so its relative /trpc and /live
+// calls resolve here. Skipped in dev (no build) where Vite serves the SPA and proxies.
+const playgroundDist = path.join(process.cwd(), 'playground', 'dist')
+if (fs.existsSync(playgroundDist)) {
+    app.use(express.static(playgroundDist))
+    app.get(/^(?!\/(trpc|webhooks|live)).*/, (_req, res) =>
+        res.sendFile(path.join(playgroundDist, 'index.html')))
+}
 
 function handleWebhook(req: express.Request, res: express.Response) {
     const rawBody = req.body as Buffer
