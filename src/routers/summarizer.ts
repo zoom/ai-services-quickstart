@@ -1,11 +1,9 @@
 import { z } from 'zod'
 import { router, procedure } from '../trpc.ts'
-import { createApiRequest, ZOOM_API_BASE_URL } from '../util.ts'
-import { filesResponseSchema, jobResponseSchema, listResponseSchema, makeBatchSubmitSchema, resolveJobIO } from './shared.ts'
-import { submitBatchJob, type JobTemplate } from './shared.ts'
+import { createApiRequest } from '../util.ts'
+import { makeBatchRouter } from './shared.ts'
 
-const makeSummarizerRequest = createApiRequest(`${ZOOM_API_BASE_URL}/aiservices/summarizer`)
-const makeSummarizerBatchRequest = async (path: string, init?: RequestInit) => jobResponseSchema.parse(await makeSummarizerRequest(path, init))
+const makeSummarizerRequest = createApiRequest('summarizer')
 
 const MAX_TEXT_BYTES = 96 * 1024
 
@@ -13,19 +11,11 @@ const supportedLanguages = ['en-us', 'zh-cn', 'ja-jp', 'es-es', 'fr-fr', 'de-de'
 const supportedTasks = ['recap', 'action_items', 'summary', 'full_summary'] as const
 const supportedSummaryTypes = ['conversation'] as const
 
-function omitEmptyStrings<T extends Record<string, unknown>>(value: T): Partial<T> {
-    return Object.fromEntries(Object.entries(value).filter(([, field]) => field !== '')) as Partial<T>
-}
-
 const summarizerFastConfigSchema = z.object({
     task: z.enum(supportedTasks),
     language: z.enum(supportedLanguages).default('en-us'),
     summary_type: z.enum(supportedSummaryTypes).default('conversation'),
 })
-
-const summarizerBatchConfigSchema = summarizerFastConfigSchema
-
-const batchSubmitSchema = makeBatchSubmitSchema(summarizerBatchConfigSchema)
 
 const summarizeResponseSchema = z.object({
     request_id: z.string().optional(),
@@ -52,62 +42,9 @@ export const summarizerRouter = router({
             config: summarizerFastConfigSchema,
         }))
         .mutation(async ({ input }) => {
-            const data = await makeSummarizerRequest('/summarize', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(input),
-            })
+            const data = await makeSummarizerRequest('/summarize', { json: input })
             return summarizeResponseSchema.parse(data)
         }),
 
-    batch: router({
-        submit: procedure
-            .input(batchSubmitSchema)
-            .mutation(async ({ input }) => {
-                const { inputAws, output } = resolveJobIO(input.input, input.output)
-                const config = omitEmptyStrings(input.config)
-                const template: JobTemplate = {
-                    output,
-                    config,
-                    ...(input.reference_id && { reference_id: input.reference_id }),
-                    ...(input.notifications?.webhook_url && { notifications: input.notifications }),
-                }
-                return submitBatchJob({
-                    input: input.input,
-                    template,
-                    inputAws,
-                    makeRequest: makeSummarizerBatchRequest,
-                })
-            }),
-
-        list: procedure
-            .input(z.object({ stateFilter: z.string().optional() }))
-            .query(async ({ input }) => {
-                const params = input.stateFilter ? `?state=${input.stateFilter}` : ''
-                const data = await makeSummarizerRequest(`/jobs${params}`)
-                return listResponseSchema.parse(data)
-            }),
-
-        getStatus: procedure
-            .input(z.object({ jobId: z.string() }))
-            .mutation(async ({ input }) => {
-                const data = await makeSummarizerRequest(`/jobs/${input.jobId}`)
-                return jobResponseSchema.parse(data)
-            }),
-
-        getFiles: procedure
-            .input(z.object({ jobId: z.string(), next_page_token: z.string().optional() }))
-            .mutation(async ({ input }) => {
-                const params = input.next_page_token ? `?next_page_token=${encodeURIComponent(input.next_page_token)}` : ''
-                const data = await makeSummarizerRequest(`/jobs/${input.jobId}/files${params}`)
-                return filesResponseSchema.parse(data)
-            }),
-
-        cancel: procedure
-            .input(z.object({ jobId: z.string() }))
-            .mutation(async ({ input }) => {
-                await makeSummarizerRequest(`/jobs/${input.jobId}`, { method: 'DELETE' })
-                return { status: 'Job canceled successfully.' }
-            }),
-    }),
+    batch: makeBatchRouter(makeSummarizerRequest, summarizerFastConfigSchema),
 })

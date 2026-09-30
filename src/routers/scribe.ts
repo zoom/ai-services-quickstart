@@ -1,11 +1,9 @@
 import { z } from 'zod'
 import { router, procedure } from '../trpc.ts'
-import { ZOOM_API_BASE_URL, createApiRequest } from '../util.ts'
-import { filesResponseSchema, jobResponseSchema, listResponseSchema, makeBatchSubmitSchema, resolveJobIO } from './shared.ts'
-import { submitBatchJob, type JobTemplate } from './shared.ts'
+import { createApiRequest } from '../util.ts'
+import { makeBatchRouter } from './shared.ts'
 
-const makeScribeRequest = createApiRequest(`${ZOOM_API_BASE_URL}/aiservices/scribe`)
-const makeScribeBatchRequest = async (path: string, init?: RequestInit) => jobResponseSchema.parse(await makeScribeRequest(path, init))
+const makeScribeRequest = createApiRequest('scribe')
 const scribeConfigSchema = z.object({
     language: z.string(),
     channel_separation: z.boolean(),
@@ -14,7 +12,6 @@ const scribeConfigSchema = z.object({
     message: 'Channel separation and diarization cannot both be enabled.',
     path: ['diarization'],
 })
-const batchSubmitSchema = makeBatchSubmitSchema(scribeConfigSchema.optional())
 
 const transcribeResponseSchema = z.object({
     request_id: z.string().optional(),
@@ -47,61 +44,9 @@ export const scribeRouter = router({
             config: scribeConfigSchema,
         }))
         .mutation(async ({ input }) => {
-            const data = await makeScribeRequest('/transcribe', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ file: input.file, config: input.config }),
-            })
+            const data = await makeScribeRequest('/transcribe', { json: input })
             return transcribeResponseSchema.parse(data)
         }),
 
-    batch: router({
-        submit: procedure
-            .input(batchSubmitSchema)
-            .mutation(async ({ input }) => {
-                const { inputAws, output } = resolveJobIO(input.input, input.output)
-                const template: JobTemplate = {
-                    output,
-                    config: input.config ?? { language: 'en-US' },
-                    ...(input.reference_id && { reference_id: input.reference_id }),
-                    ...(input.notifications?.webhook_url && { notifications: input.notifications }),
-                }
-                return submitBatchJob({
-                    input: input.input,
-                    template,
-                    inputAws,
-                    makeRequest: makeScribeBatchRequest,
-                })
-            }),
-
-        list: procedure
-            .input(z.object({ stateFilter: z.string().optional() }))
-            .query(async ({ input }) => {
-                const params = input.stateFilter ? `?state=${input.stateFilter}` : ''
-                const data = await makeScribeRequest(`/jobs${params}`)
-                return listResponseSchema.parse(data)
-            }),
-
-        getStatus: procedure
-            .input(z.object({ jobId: z.string() }))
-            .mutation(async ({ input }) => {
-                const data = await makeScribeRequest(`/jobs/${input.jobId}`)
-                return jobResponseSchema.parse(data)
-            }),
-
-        getFiles: procedure
-            .input(z.object({ jobId: z.string(), next_page_token: z.string().optional() }))
-            .mutation(async ({ input }) => {
-                const params = input.next_page_token ? `?next_page_token=${encodeURIComponent(input.next_page_token)}` : ''
-                const data = await makeScribeRequest(`/jobs/${input.jobId}/files${params}`)
-                return filesResponseSchema.parse(data)
-            }),
-
-        cancel: procedure
-            .input(z.object({ jobId: z.string() }))
-            .mutation(async ({ input }) => {
-                await makeScribeRequest(`/jobs/${input.jobId}`, { method: 'DELETE' })
-                return { status: 'Job canceled successfully.' }
-            }),
-    }),
+    batch: makeBatchRouter(makeScribeRequest, scribeConfigSchema.optional(), { language: 'en-US' }),
 })

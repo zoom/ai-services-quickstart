@@ -1,71 +1,21 @@
-import { useState } from 'react'
-import { trpc } from '../../../lib/trpc'
-import { useBatchDetailState } from '../../../components/batch/useBatchDetailState'
-import { BatchTabLayout } from '../../../components/batch/BatchTabLayout'
-import { buildBatchSubmitPayload, parseManifestEntries } from '../../../components/batch/formUtils'
-import { parseCommaSeparated, buildAwsCreds } from '../../../lib/utils'
+import { BatchTab as SharedBatchTab } from '../../../components/batch/BatchTab'
 import { AsrConfigForm } from '../components/AsrConfig'
-import { type BatchFormState, defaultBatch, MODE_DESCRIPTIONS } from '../components/batch/types'
+import { defaultAsrConfig } from '../lib/constants'
+
+const MODE_DESCRIPTIONS = {
+    SINGLE: { title: 'Single file', hint: 'One S3 audio file' },
+    PREFIX: { title: 'S3 directory', hint: 'All files under an S3 prefix' },
+    MANIFEST: { title: 'Manifest', hint: 'List of S3 URIs or public URLs' },
+}
 
 export function BatchTab() {
-    const [form, setForm] = useState<BatchFormState>(defaultBatch)
-    const update = (patch: Partial<typeof form>) => setForm(f => ({ ...f, ...patch }))
-
-    const utils = trpc.useUtils()
-    const batchState = useBatchDetailState(() => { utils.scribe.batch.list.invalidate() })
-
-    const jobsQuery = trpc.scribe.batch.list.useQuery({ stateFilter: form.stateFilter || undefined })
-
-    const submitMutation = trpc.scribe.batch.submit.useMutation({
-        onSuccess: batchState.onJobComplete,
-        onError: batchState.onMutationError,
-    })
-    const statusMutation = trpc.scribe.batch.getStatus.useMutation({
-        onMutate: batchState.clearDetail,
-        onSuccess: batchState.onDetailSuccess,
-        onError: batchState.onMutationError,
-    })
-    const filesMutation = trpc.scribe.batch.getFiles.useMutation({
-        onMutate: batchState.clearDetail,
-        onSuccess: batchState.onDetailSuccess,
-        onError: batchState.onMutationError,
-    })
-    const loadMoreFilesMutation = trpc.scribe.batch.getFiles.useMutation({
-        onSuccess: batchState.onMoreFilesSuccess,
-        onError: batchState.onMutationError,
-    })
-    const cancelMutation = trpc.scribe.batch.cancel.useMutation({
-        onMutate: batchState.clearDetail,
-        onSuccess: batchState.onJobComplete,
-        onError: batchState.onMutationError,
-    })
-
     return (
-        <BatchTabLayout
-            formId="batch-form"
-            form={form}
-            onUpdate={update}
+        <SharedBatchTab
+            product="scribe"
+            defaultConfig={defaultAsrConfig}
             modeDescriptions={MODE_DESCRIPTIONS}
             configTitle="Transcription Config"
-            configSection={<AsrConfigForm value={form.config} onChange={v => update({ config: v })} />}
-            onFormSubmit={e => {
-                e.preventDefault()
-                submitMutation.mutate(buildBatchSubmitPayload({
-                    form,
-                    manifestList: parseManifestEntries(form.manifest),
-                    includeGlobs: parseCommaSeparated(form.includeGlobs),
-                    excludeGlobs: parseCommaSeparated(form.excludeGlobs),
-                    inputAws: buildAwsCreds(form.inputAwsFromEnv, form.inputAwsKeyId, form.inputAwsSecret, form.inputAwsSession),
-                    outputAws: buildAwsCreds(form.outputAwsFromEnv, form.outputAwsKeyId, form.outputAwsSecret, form.outputAwsSession),
-                }))
-            }}
-            submitPending={submitMutation.isPending}
-            detail={batchState.detail}
-            statusMutation={statusMutation}
-            filesMutation={filesMutation}
-            loadMoreFilesMutation={loadMoreFilesMutation}
-            cancelMutation={cancelMutation}
-            jobsQuery={jobsQuery}
+            renderConfig={(config, onChange) => <AsrConfigForm value={config} onChange={onChange} />}
         />
     )
 }

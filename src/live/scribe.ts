@@ -1,9 +1,17 @@
 import type { Server } from 'node:http'
-import { WebSocket, WebSocketServer } from 'ws'
-import { generateJWT } from '../util.ts'
+import { WebSocket, WebSocketServer, type RawData } from 'ws'
+import { generateJWT, ZOOM_API_BASE_URL } from '../util.ts'
 
 const SCRIBE_LIVE_PATH = '/live/scribe'
-const SCRIBE_LIVE_ENDPOINT = 'wss://api.zoom.us/v2/aiservices/scribe/live'
+const SCRIBE_LIVE_ENDPOINT = `${ZOOM_API_BASE_URL.replace(/^https/, 'wss')}/aiservices/scribe/live`
+const MAX_QUEUED_BYTES = 8 * 1024 * 1024
+const MAX_QUEUED_FRAMES = 256
+
+function frameSize(data: RawData): number {
+    if (Buffer.isBuffer(data)) return data.length
+    if (data instanceof ArrayBuffer) return data.byteLength
+    return data.reduce((bytes, chunk) => bytes + chunk.length, 0)
+}
 
 export function attachScribeLiveRelay(server: Server) {
     // noServer: route the upgrade ourselves so only the Scribe live path is proxied.
@@ -21,13 +29,25 @@ export function attachScribeLiveRelay(server: Server) {
     wss.on('connection', (client) => {
         const upstream = new WebSocket(SCRIBE_LIVE_ENDPOINT, ['live-asr'], {
             headers: { Authorization: `Bearer ${generateJWT()}` },
+            perMessageDeflate: false, // raw PCM barely compresses; skip per-frame zlib work
         })
-        const queue: Array<[unknown, boolean]> = [] // buffer client frames until upstream opens
+        const queue: Array<[RawData, boolean]> = [] // buffer client frames until upstream opens
+        let queuedBytes = 0
+        let failed = false
+        const closeUpstream = () => {
+            if (upstream.readyState === WebSocket.CONNECTING) upstream.terminate()
+            else if (upstream.readyState === WebSocket.OPEN) upstream.close(1000)
+        }
 
         upstream.on('open', () => {
-            if (client.readyState === WebSocket.OPEN) client.send(JSON.stringify({ type: 'relay.ready' }))
-            for (const [data, isBinary] of queue) upstream.send(data as Buffer, { binary: isBinary })
+            if (client.readyState !== WebSocket.OPEN) {
+                upstream.close()
+                return
+            }
+            client.send(JSON.stringify({ type: 'relay.ready' }))
+            for (const [data, isBinary] of queue) upstream.send(data, { binary: isBinary })
             queue.length = 0
+            queuedBytes = 0
         })
         upstream.on('message', (data, isBinary) => {
             if (client.readyState === WebSocket.OPEN) client.send(data, { binary: isBinary })
@@ -37,6 +57,8 @@ export function attachScribeLiveRelay(server: Server) {
         })
 
         const fail = (message: string, code = 1011) => {
+            if (failed) return
+            failed = true
             console.error('[live]', message)
             if (client.readyState === WebSocket.OPEN) {
                 client.send(JSON.stringify({
@@ -49,6 +71,7 @@ export function attachScribeLiveRelay(server: Server) {
                 }))
                 client.close(code)
             }
+            upstream.terminate()
         }
 
         // Handshake rejected by Zoom: ws reports these as a bare "Unexpected server response: <code>".
@@ -72,23 +95,18 @@ export function attachScribeLiveRelay(server: Server) {
 
         client.on('message', (data, isBinary) => {
             if (upstream.readyState === WebSocket.OPEN) upstream.send(data, { binary: isBinary })
-            else if (upstream.readyState === WebSocket.CONNECTING) queue.push([data, isBinary])
-        })
-        client.on('close', () => {
-            try {
-                upstream.close(1000)
-            } catch {
-                // ignore
+            else if (upstream.readyState === WebSocket.CONNECTING) {
+                const bytes = frameSize(data)
+                if (queue.length >= MAX_QUEUED_FRAMES || queuedBytes + bytes > MAX_QUEUED_BYTES) {
+                    fail('Too much audio arrived before the live connection was ready.', 1009)
+                    return
+                }
+                queue.push([data, isBinary])
+                queuedBytes += bytes
             }
         })
-        client.on('error', () => {
-            try {
-                upstream.close()
-            } catch {
-                // ignore
-            }
-        })
+        client.on('close', closeUpstream)
+        client.on('error', closeUpstream)
     })
 
-    return wss
 }

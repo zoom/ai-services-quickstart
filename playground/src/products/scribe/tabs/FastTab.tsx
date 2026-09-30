@@ -1,7 +1,8 @@
 import { useState, useRef, useEffect } from 'react'
 import { AsrConfigForm } from '../components/AsrConfig'
 import { JsonResult } from '../../../components/JsonResult'
-import { Card, SectionHeading, Spinner } from '../../../components/ui'
+import { Card, SectionHeading, SubmitButton } from '../../../components/ui'
+import { inputCls } from '../../../lib/constants'
 import { defaultAsrConfig, type AsrConfig } from '../lib/constants'
 import { readFileAsDataUri } from '../../../lib/utils'
 import { AudioUploadZone } from '../components/AudioUploadZone'
@@ -22,74 +23,76 @@ function isValidFileUrl(value: string) {
 
 export function FastTab() {
     const [config, setConfig] = useState<AsrConfig>(defaultAsrConfig)
-    const [audioUrl, setAudioUrl] = useState<string | null>(null)
     const [fileUrl, setFileUrl] = useState('')
-    const [selectedFile, setSelectedFile] = useState<File | null>(null)
-    const [fileName, setFileName] = useState<string | null>(null)
+    const [uploaded, setUploaded] = useState<{ file: File; url: string } | null>(null)
     const [dragging, setDragging] = useState(false)
-    const [displayText, setDisplayText] = useState<string | false>(false)
     const fileRef = useRef<HTMLInputElement>(null)
 
     const [inputMode, setInputMode] = useState<InputMode>('upload')
     const [micError, setMicError] = useState<string | null>(null)
+    const [starting, setStarting] = useState(false)
     const [recording, setRecording] = useState(false)
     const [recordingTime, setRecordingTime] = useState(0)
-    const [recordedBlob, setRecordedBlob] = useState<Blob | null>(null)
+    const [recorded, setRecorded] = useState<{ blob: Blob; url: string } | null>(null)
     const mediaRecorderRef = useRef<MediaRecorder | null>(null)
     const chunksRef = useRef<Blob[]>([])
     const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
     const streamRef = useRef<MediaStream | null>(null)
+    const mountedRef = useRef(false)
 
-    const transcribeMutation = trpc.scribe.transcribe.useMutation({
-        onSuccess: (data) => {
-            setDisplayText(data.result?.text_display ?? '')
-        },
-    })
+    const transcribeMutation = trpc.scribe.transcribe.useMutation()
+
+    // Free object URLs when they're replaced or the tab unmounts.
+    useEffect(() => () => { if (uploaded) URL.revokeObjectURL(uploaded.url) }, [uploaded])
+    useEffect(() => () => { if (recorded) URL.revokeObjectURL(recorded.url) }, [recorded])
 
     useEffect(() => {
+        mountedRef.current = true
         return () => {
+            mountedRef.current = false
             if (timerRef.current) clearInterval(timerRef.current)
-            if (streamRef.current) streamRef.current.getTracks().forEach(t => t.stop())
+            if (mediaRecorderRef.current) mediaRecorderRef.current.onstop = null
+            streamRef.current?.getTracks().forEach(t => t.stop())
         }
     }, [])
 
     const handleFile = (file: File | undefined) => {
-        if (!file) return
-        setSelectedFile(file)
-        setFileName(file.name)
-        setAudioUrl(URL.createObjectURL(file))
-        setRecordedBlob(null)
+        if (file) setUploaded({ file, url: URL.createObjectURL(file) })
     }
 
     const startRecording = async () => {
+        setMicError(null)
+        setStarting(true)
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+            // Unmounted while the permission prompt was open: release the mic.
+            if (!mountedRef.current) { stream.getTracks().forEach(t => t.stop()); return }
             streamRef.current = stream
-            const mediaRecorder = new MediaRecorder(stream, {
-                mimeType: MediaRecorder.isTypeSupported('audio/webm;codecs=opus') ? 'audio/webm;codecs=opus' : 'audio/webm',
-            })
+            const mimeType = ['audio/webm;codecs=opus', 'audio/webm'].find(t => MediaRecorder.isTypeSupported(t))
+            const mediaRecorder = new MediaRecorder(stream, { mimeType })
             mediaRecorderRef.current = mediaRecorder
             chunksRef.current = []
 
             mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) chunksRef.current.push(e.data) }
             mediaRecorder.onstop = () => {
-                const blob = new Blob(chunksRef.current, { type: 'audio/webm' })
-                setRecordedBlob(blob)
-                setAudioUrl(URL.createObjectURL(blob))
-                setFileName('recording.webm')
                 stream.getTracks().forEach(t => t.stop())
                 streamRef.current = null
+                mediaRecorderRef.current = null
+                const blob = new Blob(chunksRef.current, { type: mediaRecorder.mimeType || 'audio/webm' })
+                setRecorded({ blob, url: URL.createObjectURL(blob) })
             }
 
             mediaRecorder.start(250)
             setRecording(true)
             setRecordingTime(0)
-            setRecordedBlob(null)
-            setAudioUrl(null)
-            setFileName(null)
+            setRecorded(null)
             timerRef.current = setInterval(() => setRecordingTime(t => t + 1), 1000)
         } catch {
-            setMicError('Microphone access denied. Allow microphone permissions and try again.')
+            streamRef.current?.getTracks().forEach(t => t.stop())
+            streamRef.current = null
+            setMicError('Could not start recording. Check microphone permissions and try again.')
+        } finally {
+            setStarting(false)
         }
     }
 
@@ -99,11 +102,11 @@ export function FastTab() {
         if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null }
     }
 
-    const clearRecording = () => { setRecordedBlob(null); setAudioUrl(null); setFileName(null); setRecordingTime(0) }
+    const clearRecording = () => { setRecorded(null); setRecordingTime(0) }
 
     const handleSubmit = async (e: React.SubmitEvent) => {
         e.preventDefault()
-        setDisplayText(false)
+        transcribeMutation.reset() // clear the previous transcript while the file is read
 
         if (inputMode === 'url') {
             const url = fileUrl.trim()
@@ -114,11 +117,11 @@ export function FastTab() {
 
         let blob: Blob | undefined
         if (inputMode === 'record') {
-            if (!recordedBlob) return
-            blob = recordedBlob
+            if (!recorded) return
+            blob = recorded.blob
         } else {
-            if (!selectedFile) return
-            blob = selectedFile
+            if (!uploaded) return
+            blob = uploaded.file
         }
 
         const dataUri = await readFileAsDataUri(blob)
@@ -126,14 +129,11 @@ export function FastTab() {
     }
 
     const canSubmit = inputMode === 'record'
-        ? !!recordedBlob
+        ? !!recorded
         : inputMode === 'url'
             ? isValidFileUrl(fileUrl.trim())
-            : !!selectedFile
+            : !!uploaded
     const busy = transcribeMutation.isPending
-    const result = busy
-        ? 'loading'
-        : (transcribeMutation.data ?? (transcribeMutation.error ? { error: transcribeMutation.error.message } : null))
 
     return (
         <div className="lg:grid lg:grid-cols-[3fr_2fr] lg:items-start gap-5">
@@ -150,11 +150,12 @@ export function FastTab() {
                             <button
                                 key={mode}
                                 type="button"
-                                onClick={() => { if (recording) return; setInputMode(mode) }}
+                                onClick={() => { if (recording || starting) return; setInputMode(mode) }}
+                                disabled={(recording || starting) && mode !== 'record'}
                                 className={[
                                     'flex-1 flex items-center justify-center gap-2 py-2 text-sm font-medium rounded-md transition-all duration-200',
                                     inputMode === mode ? 'bg-white text-gray-800 shadow-sm' : 'text-gray-500 hover:text-gray-700',
-                                    recording && mode !== 'record' ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer',
+                                    (recording || starting) && mode !== 'record' ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer',
                                 ].join(' ')}
                             >
                                 <span className={inputMode === mode && mode === 'record' ? 'text-red-500' : ''}>{icon}</span>
@@ -167,9 +168,9 @@ export function FastTab() {
                         <AudioUploadZone
                             dragging={dragging}
                             setDragging={setDragging}
-                            fileName={fileName}
+                            fileName={uploaded?.file.name ?? null}
                             fileRef={fileRef}
-                            audioUrl={audioUrl}
+                            audioUrl={uploaded?.url ?? null}
                             onFile={handleFile}
                         />
                     )}
@@ -185,7 +186,7 @@ export function FastTab() {
                                 value={fileUrl}
                                 onChange={e => setFileUrl(e.target.value)}
                                 placeholder="https://example.com/audio.mp3"
-                                className="w-full px-3 py-2.5 rounded-lg text-sm text-gray-900 bg-white border border-gray-200 focus:outline-none focus:border-zoom-blue/60 focus:ring-1 focus:ring-zoom-blue/30 placeholder:text-gray-400 transition-all duration-150"
+                                className={inputCls}
                             />
                             <p className="mt-1.5 text-xs text-gray-500">
                                 The URL must be publicly accessible over HTTP or HTTPS.
@@ -197,10 +198,11 @@ export function FastTab() {
                         <>
                             <RecordingInterface
                                 recording={recording}
-                                recordedBlob={recordedBlob}
+                                starting={starting}
+                                recordedBlob={recorded?.blob ?? null}
                                 recordingTime={recordingTime}
-                                audioUrl={audioUrl}
-                                onStart={() => { setMicError(null); startRecording() }}
+                                audioUrl={recorded?.url ?? null}
+                                onStart={startRecording}
                                 onStop={stopRecording}
                                 onClear={clearRecording}
                             />
@@ -218,23 +220,11 @@ export function FastTab() {
             </form>
 
             <div className="lg:sticky lg:top-20">
-                <button
-                    form="fast-form"
-                    type="submit"
-                    disabled={busy || !canSubmit}
-                    className={[
-                        'flex items-center gap-2 self-start px-6 py-2.5 rounded-lg text-sm font-semibold transition-all duration-150 mb-4',
-                        busy || !canSubmit
-                            ? 'bg-zoom-blue/50 text-white cursor-not-allowed'
-                            : 'bg-zoom-blue hover:bg-zoom-blue-hover active:scale-95 text-white shadow-lg shadow-zoom-blue/25',
-                    ].join(' ')}
-                >
-                    {busy && <Spinner />}
-                    {busy ? 'Transcribing...' : '\u25B6 Transcribe'}
-                </button>
+                <SubmitButton form="fast-form" busy={busy} disabled={!canSubmit} label="Transcribe" busyLabel="Transcribing..." className="mb-4" />
                 <TranscriptPanel
-                    result={result}
-                    displayText={displayText}
+                    loading={busy}
+                    error={transcribeMutation.error?.message}
+                    text={transcribeMutation.data?.result?.text_display}
                     segments={transcribeMutation.data?.result?.segments}
                 />
                 <JsonResult data={busy ? null : (transcribeMutation.data ?? null)} loading={busy} />

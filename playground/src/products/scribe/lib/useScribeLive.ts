@@ -30,13 +30,7 @@ export function useScribeLive() {
     }, [])
 
     const teardownAudio = useCallback(() => {
-        try { nodeRef.current?.disconnect() } catch { /* ignore */ }
-        try { sourceRef.current?.disconnect() } catch { /* ignore */ }
-        try { streamRef.current?.getTracks().forEach(t => t.stop()) } catch { /* ignore */ }
-        try {
-            const closing = ctxRef.current?.close()
-            void closing?.catch(() => { /* ignore */ })
-        } catch { /* ignore */ }
+        releaseAudio(nodeRef.current, sourceRef.current, streamRef.current, ctxRef.current)
         nodeRef.current = null
         sourceRef.current = null
         streamRef.current = null
@@ -79,13 +73,7 @@ export function useScribeLive() {
 
         const isCurrent = () => mountedRef.current && sessionIdRef.current === sessionId
         const disposeLocalAudio = () => {
-            try { node?.disconnect() } catch { /* ignore */ }
-            try { source?.disconnect() } catch { /* ignore */ }
-            try { stream?.getTracks().forEach(t => t.stop()) } catch { /* ignore */ }
-            try {
-                const closing = ctx?.close()
-                void closing?.catch(() => { /* ignore */ })
-            } catch { /* ignore */ }
+            releaseAudio(node, source, stream, ctx)
             if (nodeRef.current === node) nodeRef.current = null
             if (sourceRef.current === source) sourceRef.current = null
             if (streamRef.current === stream) streamRef.current = null
@@ -239,6 +227,13 @@ export function useScribeLive() {
     }, [])
 
     return { status, segments, interim, error, latencyMs, events, start, stop, clear }
+}
+
+function releaseAudio(node: AudioNode | null, source: AudioNode | null, stream: MediaStream | null, ctx: AudioContext | null) {
+    try { node?.disconnect() } catch { /* ignore */ }
+    try { source?.disconnect() } catch { /* ignore */ }
+    try { stream?.getTracks().forEach(t => t.stop()) } catch { /* ignore */ }
+    try { void ctx?.close().catch(() => { /* ignore */ }) } catch { /* ignore */ }
 }
 
 export type ScribeStatus = 'idle' | 'connecting' | 'recording' | 'stopping' | 'error'

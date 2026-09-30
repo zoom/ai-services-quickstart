@@ -12,10 +12,10 @@ A Node.js/Express + React playground for the [Zoom AI Services APIs](https://dev
 
 | Product | Modes | Description |
 |---|---|---|
-| **Scribe** | Fast  | Upload or record audio/video, get a transcript immediately |
+| **Scribe** | Fast  | Upload, record, or link (public URL) audio/video, get a transcript immediately |
 | **Scribe** | Live  | Stream your microphone and see transcripts in real time over a WebSocket |
-| **Scribe** | Batch | Process thousands of S3 files; auto-splits jobs >1,000 files |
-| **Translator** | Fast  | Translate up to 4,000 characters into one of 9 supported languages |
+| **Scribe** | Batch | Transcribe a single S3 file, an S3 prefix, or a manifest of S3 URIs / public URLs |
+| **Translator** | Fast  | Translate up to 4,000 characters between 10 supported languages |
 | **Translator** | Batch | Translate `.txt` files stored in S3 |
 | **Summarizer** | Fast  | Summarize a transcript (up to 96 KB) — recap, action items, summary, or full summary |
 | **Summarizer** | Batch | Summarize transcripts stored in S3 |
@@ -83,28 +83,18 @@ Open `http://localhost:5173`.
 
 ## Docker
 
-Build and run the API server:
+Build and run the server and playground as a single image:
 
 ```bash
 docker build -t ai-services-quickstart .
 docker run --rm --env-file .env -p 4000:4000 ai-services-quickstart
 ```
 
-The image runs the backend on port `4000`, including `/trpc`, the webhook endpoints, and the `/live/scribe` WebSocket relay. The `.env` file is excluded from the image; `--env-file` supplies credentials securely at runtime.
-
-The playground is not included in the backend image. To use the UI, run it separately while the container is running:
-
-```bash
-cd playground
-npm install
-npm run dev
-```
-
-Then open `http://localhost:5173`. If you change `PORT` in `.env`, update the container port mapping and the playground proxy target accordingly.
+Open `http://localhost:4000`. The image builds the playground and serves it from the same server as `/trpc`, the webhook endpoints, and the `/live/scribe` WebSocket relay. The `.env` file is excluded from the image; `--env-file` supplies credentials at runtime. If you change `PORT` in `.env`, update the container port mapping to match.
 
 ## Webhooks
 
-The server exposes three webhook endpoints for Zoom batch job notifications: `POST /webhooks/scribe`, `POST /webhooks/translator`, and `POST /webhooks/summarizer`. All three require a publicly reachable HTTPS URL — use [cloudflared](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/do-more-with-tunnels/trycloudflare/) for local development:
+The server receives Zoom batch job notifications at `POST /webhooks/<product>` — e.g. `/webhooks/scribe`, `/webhooks/translator`, `/webhooks/summarizer`. Webhooks require a publicly reachable HTTPS URL — use [cloudflared](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/do-more-with-tunnels/trycloudflare/) for local development:
 
 ```bash
 cloudflared tunnel --url http://localhost:4000

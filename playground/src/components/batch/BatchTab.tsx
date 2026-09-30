@@ -1,62 +1,45 @@
 import { useState } from 'react'
 import { BatchModeSelector } from './BatchModeSelector'
 import { BatchResultVisual } from './BatchResultVisual'
-import { BatchResponseViewer } from './BatchResponseViewer'
 import { JobsList } from './JobsList'
+import { buildBatchSubmitPayload } from './formUtils'
+import { useBatchDetailState } from './useBatchDetailState'
 import { CredentialsBox } from '../CredentialsBox'
-import { CollapsibleCard, Field, Spinner } from '../ui'
+import { JsonResult } from '../JsonResult'
+import { CollapsibleCard, Field, SubmitButton } from '../ui'
 import { selectCls, inputCls } from '../../lib/constants'
-import { isFilesResponse, type BatchApiResponse, type Job } from '../../lib/batchTypes'
-import type { BaseBatchFormState, BatchInputMode, BatchModeDescription, BatchOutputLayout } from './formTypes'
+import { isFilesResponse } from '../../lib/batchTypes'
+import { trpc, type RouterInputs } from '../../lib/trpc'
+import { defaultBatchForm, type BatchFormState, type BatchInputMode, type BatchModeDescription, type BatchOutputLayout } from './formTypes'
 
-type FormPatch = Partial<Omit<BaseBatchFormState<unknown>, 'config'>>
+export type BatchProduct = 'scribe' | 'summarizer' | 'translator'
+export type BatchConfig<P extends BatchProduct> = Required<NonNullable<RouterInputs[P]['batch']['submit']['config']>>
 
-interface JobMutation {
-    mutate: (input: { jobId: string }) => void
-    isPending: boolean
-}
-
-interface FilesMutation {
-    mutate: (input: { jobId: string; next_page_token?: string }) => void
-    isPending: boolean
-}
-
-export interface BatchTabLayoutProps {
-    formId: string
-    form: BaseBatchFormState<unknown>
-    onUpdate: (patch: FormPatch) => void
+// Full batch-jobs tab (submit form, response panel, jobs list) for any product with a batch router.
+export function BatchTab<P extends BatchProduct>({ product, defaultConfig, modeDescriptions, configTitle, renderConfig }: {
+    product: P
+    defaultConfig: BatchConfig<P>
     modeDescriptions: Record<BatchInputMode, BatchModeDescription>
-    configSection: React.ReactNode
     configTitle: string
-    onFormSubmit: (e: React.FormEvent<HTMLFormElement>) => void
-    submitPending: boolean
-    detail: BatchApiResponse | null
-    statusMutation: JobMutation
-    filesMutation: FilesMutation
-    loadMoreFilesMutation: FilesMutation
-    cancelMutation: JobMutation
-    jobsQuery: { data?: { jobs: Job[] }; isFetching: boolean; refetch: () => void }
-}
-
-export function BatchTabLayout({
-    formId,
-    form,
-    onUpdate,
-    modeDescriptions,
-    configSection,
-    configTitle,
-    onFormSubmit,
-    submitPending,
-    detail,
-    statusMutation,
-    filesMutation,
-    loadMoreFilesMutation,
-    cancelMutation,
-    jobsQuery,
-}: BatchTabLayoutProps) {
+    renderConfig: (config: BatchConfig<P>, onChange: (config: BatchConfig<P>) => void) => React.ReactNode
+}) {
+    const [form, setForm] = useState<BatchFormState<BatchConfig<P>>>({ ...defaultBatchForm, config: defaultConfig })
+    const onUpdate = (patch: Partial<typeof form>) => setForm(f => ({ ...f, ...patch }))
     const [filesJobId, setFilesJobId] = useState<string | null>(null)
 
-    const detailLoading = submitPending
+    const api = trpc[product].batch
+    const utils = trpc.useUtils()
+    const batchState = useBatchDetailState(() => { utils[product].batch.list.invalidate() })
+    const jobsQuery = api.list.useQuery({ stateFilter: form.stateFilter || undefined })
+    const submitMutation = api.submit.useMutation(batchState.submitOptions)
+    const statusMutation = api.getStatus.useMutation(batchState.viewOptions)
+    const filesMutation = api.getFiles.useMutation(batchState.viewOptions)
+    const loadMoreFilesMutation = api.getFiles.useMutation(batchState.loadMoreOptions)
+    const cancelMutation = api.cancel.useMutation(batchState.cancelOptions)
+
+    const { detail, moreFilesError } = batchState
+    const formId = `${product}-batch-form`
+    const detailLoading = submitMutation.isPending
         || statusMutation.isPending
         || filesMutation.isPending
         || cancelMutation.isPending
@@ -66,7 +49,10 @@ export function BatchTabLayout({
     return (
         <div className="lg:grid lg:grid-cols-[5fr_3fr] gap-5">
             <div className="flex flex-col gap-5 min-w-0">
-                <form id={formId} onSubmit={onFormSubmit} className="flex flex-col gap-5">
+                <form id={formId} onSubmit={e => { e.preventDefault(); submitMutation.mutate(
+                    // TS can't match the payload to a generic product's submit input; config is BatchConfig<P>.
+                    buildBatchSubmitPayload(form) as RouterInputs[P]['batch']['submit'],
+                ) }} className="flex flex-col gap-5">
 
                     <CollapsibleCard title="Input">
                         <div className="flex flex-col gap-4">
@@ -74,8 +60,7 @@ export function BatchTabLayout({
                                 value={form.inputMode}
                                 descriptions={modeDescriptions}
                                 onChange={v => {
-                                    onUpdate({ inputMode: v })
-                                    if (v !== 'PREFIX') onUpdate({ outputLayout: 'PREFIX' as BatchOutputLayout })
+                                    onUpdate({ inputMode: v, ...(v !== 'PREFIX' && { outputLayout: 'PREFIX' }) })
                                 }}
                             />
 
@@ -85,6 +70,7 @@ export function BatchTabLayout({
                                         className={inputCls + ' font-mono text-xs'}
                                         value={form.inputUri}
                                         onChange={e => onUpdate({ inputUri: e.target.value })}
+                                        required
                                         placeholder={form.inputMode === 'SINGLE' ? 's3://my-bucket/file.ext' : 's3://my-bucket/prefix/'}
                                     />
                                 </Field>
@@ -107,6 +93,7 @@ export function BatchTabLayout({
                                         className={inputCls + ' min-h-32 resize-y font-mono text-xs leading-relaxed'}
                                         value={form.manifest}
                                         onChange={e => onUpdate({ manifest: e.target.value })}
+                                        required
                                         placeholder={'# Public URLs\nhttps://cdn.example.com/file1\nhttps://cdn.example.com/file2\n\n# Private S3 URIs\ns3://my-bucket/file3'}
                                     />
                                 </Field>
@@ -143,7 +130,7 @@ export function BatchTabLayout({
                                 </Field>
                                 {(form.outputLayout === 'PREFIX' || form.inputMode !== 'PREFIX') && (
                                     <Field label="S3 URI" hint="Bucket URI for output files">
-                                        <input className={inputCls + ' font-mono text-xs'} value={form.outputUri} onChange={e => onUpdate({ outputUri: e.target.value })} placeholder="s3://my-bucket/output/" />
+                                        <input className={inputCls + ' font-mono text-xs'} value={form.outputUri} onChange={e => onUpdate({ outputUri: e.target.value })} placeholder="s3://my-bucket/output/" required />
                                     </Field>
                                 )}
                             </div>
@@ -159,7 +146,7 @@ export function BatchTabLayout({
                     </CollapsibleCard>
 
                     <CollapsibleCard title={configTitle} defaultOpen={false}>
-                        {configSection}
+                        {renderConfig(form.config, config => onUpdate({ config }))}
                     </CollapsibleCard>
 
                     <CollapsibleCard title="Metadata & Notifications" defaultOpen={false}>
@@ -180,30 +167,26 @@ export function BatchTabLayout({
             </div>
 
             <div className="flex flex-col gap-5 lg:sticky lg:top-18 min-w-0">
-                <button
-                    form={formId}
-                    type="submit"
-                    disabled={submitPending}
-                    className={[
-                        'flex items-center gap-2 self-start px-6 py-2.5 rounded-lg text-sm font-semibold transition-all duration-150',
-                        submitPending
-                            ? 'bg-zoom-blue/50 text-white cursor-not-allowed'
-                            : 'bg-zoom-blue hover:bg-zoom-blue-hover active:scale-95 text-white shadow-lg shadow-zoom-blue/25',
-                    ].join(' ')}
-                >
-                    {submitPending && <Spinner />}
-                    {submitPending ? 'Submitting…' : '▶ Submit Batch Job'}
-                </button>
+                <SubmitButton form={formId} busy={submitMutation.isPending} label="Submit Batch Job" busyLabel="Submitting…" />
 
-                <BatchResponseViewer
-                    detail={detail}
-                    detailLoading={detailLoading}
-                    visual={detail && !detailLoading ? <BatchResultVisual data={detail} /> : undefined}
-                    onLoadMore={filesJobId && nextCursor
-                        ? () => loadMoreFilesMutation.mutate({ jobId: filesJobId, next_page_token: nextCursor })
-                        : undefined
-                    }
-                    loadingMore={loadMoreFilesMutation.isPending}
+                <JsonResult
+                    data={detail}
+                    loading={detailLoading}
+                    className="max-h-96"
+                    visual={detail ? <BatchResultVisual data={detail} /> : undefined}
+                    footer={!detailLoading && filesJobId && nextCursor && (
+                        <div className="px-4 py-2.5 border-t border-gray-200 bg-gray-50 shrink-0">
+                            {moreFilesError && <p role="alert" className="text-xs text-red-600 mb-2">{moreFilesError}</p>}
+                            <button
+                                type="button"
+                                onClick={() => loadMoreFilesMutation.mutate({ jobId: filesJobId, next_page_token: nextCursor })}
+                                disabled={loadMoreFilesMutation.isPending}
+                                className="flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg bg-white border border-gray-200 text-gray-500 hover:text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50"
+                            >
+                                {loadMoreFilesMutation.isPending ? '… Loading…' : '↓ Load more files'}
+                            </button>
+                        </div>
+                    )}
                 />
 
                 <JobsList

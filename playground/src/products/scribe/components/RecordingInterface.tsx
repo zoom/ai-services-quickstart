@@ -22,6 +22,7 @@ function RecordingBars({ active }: { active: boolean }) {
 
 interface Props {
     recording: boolean
+    starting: boolean
     recordedBlob: Blob | null
     recordingTime: number
     audioUrl: string | null
@@ -30,7 +31,7 @@ interface Props {
     onClear: () => void
 }
 
-export function RecordingInterface({ recording, recordedBlob, recordingTime, audioUrl, onStart, onStop, onClear }: Props) {
+export function RecordingInterface({ recording, starting, recordedBlob, recordingTime, audioUrl, onStart, onStop, onClear }: Props) {
     return (
         <div className="flex flex-col items-center gap-4 py-6 px-4 rounded-lg border-2 border-dashed border-gray-200 bg-gray-50/50">
             {!recording && !recordedBlob && (
@@ -40,10 +41,11 @@ export function RecordingInterface({ recording, recordedBlob, recordingTime, aud
                     <button
                         type="button"
                         onClick={onStart}
-                        className="group flex items-center gap-2.5 px-5 py-2.5 rounded-full bg-red-500 hover:bg-red-600 active:scale-95 text-white text-sm font-semibold shadow-lg shadow-red-500/20 transition-all duration-150"
+                        disabled={starting}
+                        className="group flex items-center gap-2.5 px-5 py-2.5 rounded-full bg-red-500 hover:bg-red-600 active:scale-95 text-white text-sm font-semibold shadow-lg shadow-red-500/20 transition-all duration-150 disabled:opacity-50 disabled:cursor-wait"
                     >
                         <span className="w-3 h-3 rounded-full bg-white group-hover:scale-110 transition-transform" />
-                        Start Recording
+                        {starting ? 'Starting...' : 'Start Recording'}
                     </button>
                 </>
             )}
@@ -80,7 +82,7 @@ export function RecordingInterface({ recording, recordedBlob, recordingTime, aud
                     </div>
                     <div className="text-center">
                         <p className="text-sm font-medium text-gray-700">Recording ready &middot; {formatTime(recordingTime)}</p>
-                        <p className="text-xs text-gray-400 mt-0.5">recording.webm</p>
+                        <p className="text-xs text-gray-400 mt-0.5">Microphone recording</p>
                     </div>
                     {audioUrl && (
                         <audio src={audioUrl} controls className="w-full rounded-lg h-10" />

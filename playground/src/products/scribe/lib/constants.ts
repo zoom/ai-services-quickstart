@@ -1,8 +1,6 @@
-export type AsrConfig = {
-    language: string
-    channel_separation: boolean
-    diarization: boolean
-}
+import type { RouterInputs } from '../../../lib/trpc'
+
+export type AsrConfig = RouterInputs['scribe']['transcribe']['config']
 
 export const defaultAsrConfig: AsrConfig = {
     language: 'en-US',

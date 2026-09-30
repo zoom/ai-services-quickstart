@@ -1,6 +1,6 @@
 import { Card, Spinner } from '../ui'
 import { StateBadge } from './StateBadge'
-import { STATE_META } from './stateMeta'
+import { JOB_STATES } from './stateMeta'
 import type { Job } from '../../lib/batchTypes'
 
 interface Props {
@@ -29,7 +29,7 @@ export function JobsList({ jobs, loadingJobs, stateFilter, onStateFilterChange, 
                         onChange={e => onStateFilterChange(e.target.value)}
                     >
                         <option value="">All states</option>
-                        {Object.keys(STATE_META).map(s => <option key={s} value={s}>{s}</option>)}
+                        {JOB_STATES.map(s => <option key={s} value={s}>{s}</option>)}
                     </select>
                     <button
                         type="button"

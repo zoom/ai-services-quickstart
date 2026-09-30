@@ -1,12 +1,6 @@
-import type { BaseBatchFormState, BatchInputMode } from './formTypes'
+import type { BatchFormState } from './formTypes'
 
-type AwsCredentialsInput = {
-    access_key_id: string
-    secret_access_key: string
-    session_token: string
-}
-
-export function parseManifestEntries(input: string): string[] | undefined {
+function parseManifestEntries(input: string): string[] | undefined {
     const trimmed = input.trim()
     const entries = trimmed
         ? trimmed.split('\n').map(line => line.trim()).filter(line => line && !line.startsWith('#'))
@@ -15,36 +9,36 @@ export function parseManifestEntries(input: string): string[] | undefined {
     return entries?.length ? entries : undefined
 }
 
-export function isHttpBatchInput(mode: BatchInputMode, inputUri: string, manifestList: string[] | undefined): boolean {
-    return mode === 'MANIFEST'
-        ? (manifestList ?? []).every(uri => uri.startsWith('http'))
-        : inputUri.startsWith('http')
+function parseCommaSeparated(input: string): string[] | undefined {
+    const parsed = input.split(',').map(s => s.trim()).filter(Boolean)
+    return parsed.length > 0 ? parsed : undefined
 }
 
-export function buildBatchSubmitPayload<TConfig, TOutputLayout extends string>({
-    form,
-    manifestList,
-    includeGlobs,
-    excludeGlobs,
-    inputAws,
-    outputAws,
-}: {
-    form: BaseBatchFormState<TConfig, TOutputLayout>
-    manifestList: string[] | undefined
-    includeGlobs: string[] | undefined
-    excludeGlobs: string[] | undefined
-    inputAws: AwsCredentialsInput | undefined
-    outputAws: AwsCredentialsInput | undefined
-}) {
-    const isHttpInput = isHttpBatchInput(form.inputMode, form.inputUri, manifestList)
+function buildAwsCreds(fromEnv: boolean, keyId: string, secret: string, session: string) {
+    if (fromEnv || !keyId) return undefined
+    return { access_key_id: keyId, secret_access_key: secret, session_token: session }
+}
+
+export function buildBatchSubmitPayload<TConfig>(form: BatchFormState<TConfig>) {
+    const manifestList = parseManifestEntries(form.manifest)
+    const includeGlobs = parseCommaSeparated(form.includeGlobs)
+    const excludeGlobs = parseCommaSeparated(form.excludeGlobs)
+    const inputAws = buildAwsCreds(form.inputAwsFromEnv, form.inputAwsKeyId, form.inputAwsSecret, form.inputAwsSession)
+    const outputAws = buildAwsCreds(form.outputAwsFromEnv, form.outputAwsKeyId, form.outputAwsSecret, form.outputAwsSession)
+    const isHttpInput = form.inputMode === 'MANIFEST'
+        ? Boolean(manifestList?.every(uri => uri.startsWith('http')))
+        : form.inputUri.trim().startsWith('http')
+    const inputUri = form.inputUri.trim()
+    const outputUri = form.outputUri.trim()
+    const usesOutputUri = form.inputMode !== 'PREFIX' || form.outputLayout === 'PREFIX'
 
     return {
         input: {
             ...(!isHttpInput && { source: 'S3' }),
             mode: form.inputMode,
-            ...(form.inputUri && { uri: form.inputUri }),
-            ...(manifestList && { manifest: manifestList }),
-            ...((includeGlobs || excludeGlobs) && {
+            ...(form.inputMode !== 'MANIFEST' && inputUri && { uri: inputUri }),
+            ...(form.inputMode === 'MANIFEST' && manifestList && { manifest: manifestList }),
+            ...(form.inputMode === 'PREFIX' && (includeGlobs || excludeGlobs) && {
                 filters: {
                     ...(includeGlobs && { include_globs: includeGlobs }),
                     ...(excludeGlobs && { exclude_globs: excludeGlobs }),
@@ -54,7 +48,7 @@ export function buildBatchSubmitPayload<TConfig, TOutputLayout extends string>({
         },
         output: {
             destination: 'S3',
-            uri: form.outputUri,
+            ...(usesOutputUri && outputUri && { uri: outputUri }),
             layout: form.inputMode === 'PREFIX' ? form.outputLayout : 'PREFIX',
             overwrite: false,
             ...(outputAws && { auth: { aws: outputAws } }),

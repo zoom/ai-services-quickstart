@@ -3,33 +3,23 @@ import dotenv from 'dotenv'
 dotenv.config()
 
 export type AwsCredentials = {
-    access_key_id?: string
-    secret_access_key?: string
+    access_key_id: string
+    secret_access_key: string
     session_token?: string
 }
 
 const ZOOM_API_KEY = process.env.ZOOM_API_KEY
 const ZOOM_API_SECRET = process.env.ZOOM_API_SECRET
-export const ZOOM_API_BASE_URL = 'https://api.zoom.us/v2/'
+export const ZOOM_API_BASE_URL = 'https://api.zoom.us/v2'
 
 if (!ZOOM_API_KEY || !ZOOM_API_SECRET) {
     throw new Error('ZOOM_API_KEY and ZOOM_API_SECRET are required')
 }
 
 export const generateJWT = () => {
-    const now = Math.round(Date.now() / 1000)
-    const iat = now - 30
-    const exp = iat + 60 * 60 * 2
-    const oHeader = { alg: 'HS256', typ: 'JWT' }
-    const oPayload = {
-        iss: ZOOM_API_KEY,
-        iat: iat,
-        exp: exp
-    }
-    const sHeader = JSON.stringify(oHeader)
-    const sPayload = JSON.stringify(oPayload)
-    const API_JWT = KJUR.jws.JWS.sign('HS256', sHeader, sPayload, ZOOM_API_SECRET)
-    return API_JWT
+    const iat = Math.round(Date.now() / 1000) - 30
+    const exp = iat + 60 * 60 * 1
+    return KJUR.jws.JWS.sign('HS256', JSON.stringify({ alg: 'HS256', typ: 'JWT' }), JSON.stringify({ iss: ZOOM_API_KEY, iat, exp }), ZOOM_API_SECRET)
 }
 
 export function getEnvAwsCredentials(): AwsCredentials | undefined {
@@ -42,7 +32,7 @@ export function getEnvAwsCredentials(): AwsCredentials | undefined {
 }
 
 export function isS3(value?: string): boolean {
-    return String(value ?? '').toLowerCase() === 's3'
+    return value?.toLowerCase() === 's3'
 }
 
 export function withAwsAuth<T extends { auth?: { aws?: AwsCredentials } }>(value: T | undefined, aws: AwsCredentials | undefined): T | undefined {
@@ -51,11 +41,23 @@ export function withAwsAuth<T extends { auth?: { aws?: AwsCredentials } }>(value
     return { ...value, auth: { ...(value.auth ?? {}), aws } }
 }
 
-export function createApiRequest(basePath: string) {
-    return async function makeRequest(path: string, init?: RequestInit) {
-        const res = await fetch(`${basePath}${path}`, { ...init, headers: { Authorization: `Bearer ${generateJWT()}`, ...init?.headers } })
+// Requests to one AI service, e.g. createApiRequest('scribe'). Pass `json` to POST a JSON body.
+export function createApiRequest(service: string) {
+    const basePath = `${ZOOM_API_BASE_URL}/aiservices/${service}`
+    return async function makeRequest(path: string, { json, ...init }: RequestInit & { json?: unknown } = {}) {
+        const res = await fetch(`${basePath}${path}`, {
+            ...init,
+            ...(json !== undefined && { method: 'POST', body: JSON.stringify(json) }),
+            headers: {
+                Authorization: `Bearer ${generateJWT()}`,
+                ...(json !== undefined && { 'Content-Type': 'application/json' }),
+                ...init.headers,
+            },
+        })
         if (!res.ok) throw new Error(await res.text() || res.statusText)
         if (res.status === 204) return null
         return res.json()
     }
 }
+
+export type ApiRequest = ReturnType<typeof createApiRequest>

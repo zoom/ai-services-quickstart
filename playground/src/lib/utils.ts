@@ -4,17 +4,6 @@ export function formatTime(seconds: number) {
     return `${m}:${s}`
 }
 
-export function parseCommaSeparated(input: string): string[] | undefined {
-    const parsed = input.split(',').map(s => s.trim()).filter(Boolean)
-    return parsed.length > 0 ? parsed : undefined
-}
-
-export function buildAwsCreds(fromEnv: boolean, keyId: string, secret: string, session: string) {
-    if (fromEnv || !keyId) return undefined
-    return { access_key_id: keyId, secret_access_key: secret, session_token: session }
-}
-
-
 export function readFileAsDataUri(blob: Blob): Promise<string> {
     return new Promise((resolve, reject) => {
         const reader = new FileReader()

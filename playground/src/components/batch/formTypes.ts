@@ -6,8 +6,8 @@ export type BatchModeDescription = {
     hint: string
 }
 
-export type BaseBatchFormState<TConfig, TOutputLayout extends string = BatchOutputLayout, TInputMode extends string = BatchInputMode> = {
-    inputMode: TInputMode
+export type BatchFormState<TConfig> = {
+    inputMode: BatchInputMode
     inputUri: string
     manifest: string
     includeGlobs: string
@@ -17,7 +17,7 @@ export type BaseBatchFormState<TConfig, TOutputLayout extends string = BatchOutp
     inputAwsSecret: string
     inputAwsSession: string
     outputUri: string
-    outputLayout: TOutputLayout
+    outputLayout: BatchOutputLayout
     outputAwsFromEnv: boolean
     outputAwsKeyId: string
     outputAwsSecret: string
@@ -29,7 +29,7 @@ export type BaseBatchFormState<TConfig, TOutputLayout extends string = BatchOutp
     stateFilter: string
 }
 
-export const defaultBatchFormStateBase = {
+export const defaultBatchForm: Omit<BatchFormState<never>, 'config'> = {
     inputMode: 'PREFIX',
     inputUri: '',
     manifest: '',
@@ -49,4 +49,4 @@ export const defaultBatchFormStateBase = {
     webhookUrl: '',
     webhookSecret: '',
     stateFilter: '',
-} as const
+}

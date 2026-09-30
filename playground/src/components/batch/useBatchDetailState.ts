@@ -1,44 +1,51 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import type { BatchApiResponse, FilesResponse } from '../../lib/batchTypes'
 import { isFilesResponse } from '../../lib/batchTypes'
 
-type JobAction = 'status' | 'files' | 'cancel'
-type JobMutation = { mutate: (input: { jobId: string }) => void; isPending: boolean }
-
+// Returns mutation options for each batch action. Every new request bumps `seq`,
+// so responses from older requests are ignored instead of overwriting the detail panel.
 export function useBatchDetailState(invalidateJobs: () => void) {
     const [detail, setDetail] = useState<BatchApiResponse | null>(null)
+    const [moreFilesError, setMoreFilesError] = useState<string | null>(null)
+    const seq = useRef(0)
 
-    const clearDetail = () => setDetail(null)
-    const onMutationError = (err: { message: string }) => setDetail({ error: err.message })
-    const onJobComplete = (data: BatchApiResponse) => {
-        setDetail(data)
-        invalidateJobs()
-    }
-    const onDetailSuccess = (data: BatchApiResponse) => setDetail(data)
-    const onMoreFilesSuccess = (data: FilesResponse) => {
-        setDetail(prev => {
-            if (prev && isFilesResponse(prev)) {
-                return { files: [...prev.files, ...data.files], next_cursor: data.next_cursor }
-            }
-            return data
-        })
-    }
-
-    const runJobAction = (action: JobAction, jobId: string, mutations: Record<JobAction, JobMutation>) => {
+    const start = () => {
         setDetail(null)
-        mutations[action].mutate({ jobId })
+        setMoreFilesError(null)
+        return ++seq.current
     }
-
-    const getDetailLoading = (...pending: boolean[]) => pending.some(Boolean)
+    const detailOptions = (refreshJobs: boolean) => ({
+        onMutate: start,
+        onSuccess: (data: BatchApiResponse, _vars: unknown, id: number | undefined) => {
+            if (id !== seq.current) return
+            setDetail(data)
+            if (refreshJobs) invalidateJobs()
+        },
+        onError: (err: { message: string }, _vars: unknown, id: number | undefined) => {
+            if (id === seq.current) setDetail({ error: err.message })
+        },
+    })
 
     return {
         detail,
-        clearDetail,
-        onMutationError,
-        onJobComplete,
-        onDetailSuccess,
-        onMoreFilesSuccess,
-        runJobAction,
-        getDetailLoading,
+        moreFilesError,
+        submitOptions: detailOptions(true),
+        cancelOptions: detailOptions(true),
+        viewOptions: detailOptions(false),
+        loadMoreOptions: {
+            onMutate: () => {
+                setMoreFilesError(null)
+                return seq.current
+            },
+            onSuccess: (data: FilesResponse, _vars: unknown, id: number | undefined) => {
+                if (id !== seq.current) return
+                setDetail(prev => prev && isFilesResponse(prev)
+                    ? { files: [...prev.files, ...data.files], next_cursor: data.next_cursor }
+                    : prev)
+            },
+            onError: (err: { message: string }, _vars: unknown, id: number | undefined) => {
+                if (id === seq.current) setMoreFilesError(err.message)
+            },
+        },
     }
 }

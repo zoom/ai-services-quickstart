@@ -1,11 +1,6 @@
 import { selectCls } from '../../../lib/constants'
 import { Field } from '../../../components/ui'
-import {
-    TARGET_LANGUAGE_OPTIONS,
-    type SourceLanguageCode,
-    type TargetLanguageCode,
-    type TranslatorConfig,
-} from '../lib/constants'
+import { LANGUAGE_OPTIONS, type LanguageCode, type TranslatorConfig } from '../lib/constants'
 
 export function TranslatorConfigForm({ value, onChange }: { value: TranslatorConfig; onChange: (v: TranslatorConfig) => void }) {
     return (
@@ -14,9 +9,9 @@ export function TranslatorConfigForm({ value, onChange }: { value: TranslatorCon
                 <select
                     className={selectCls}
                     value={value.source_language}
-                    onChange={e => onChange({ ...value, source_language: e.target.value as SourceLanguageCode })}
+                    onChange={e => onChange({ ...value, source_language: e.target.value as LanguageCode })}
                 >
-                    {TARGET_LANGUAGE_OPTIONS.map(option => (
+                    {LANGUAGE_OPTIONS.map(option => (
                         <option key={option.value} value={option.value}>{option.label}</option>
                     ))}
                 </select>
@@ -26,9 +21,9 @@ export function TranslatorConfigForm({ value, onChange }: { value: TranslatorCon
                 <select
                     className={selectCls}
                     value={value.target_languages[0] ?? ''}
-                    onChange={e => onChange({ ...value, target_languages: [e.target.value as TargetLanguageCode] })}
+                    onChange={e => onChange({ ...value, target_languages: [e.target.value as LanguageCode] })}
                 >
-                    {TARGET_LANGUAGE_OPTIONS.map(option => (
+                    {LANGUAGE_OPTIONS.map(option => (
                         <option key={option.value} value={option.value}>{option.label}</option>
                     ))}
                 </select>
