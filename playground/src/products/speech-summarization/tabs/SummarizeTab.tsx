@@ -8,6 +8,16 @@ import { useAudioUpload } from '../../../lib/useAudioUpload'
 const TEMPLATES = ['one_on_one', 'stand_up', 'brainstorm', 'project_update', 'discussion', 'q_a', 'customer_success', 'user_feedback', 'lecture_summary', 'next_steps']
 
 type StreamEvent = { event: string; data: string }
+type Citation = { id: number; speaker: string; start_time: string; end_time: string }
+
+// Append footnote definitions; drop markers (and a half-streamed `[^1`) that have no definition yet.
+function withCitations(summary: string, citations: Citation[]): string {
+    const ids = new Set(citations.map(c => c.id))
+    const text = summary
+        .replace(/\[\^(\d+)\]/g, (m, id) => (ids.has(Number(id)) ? m : ''))
+        .replace(/\[\^?\d*$/, '')
+    return text + citations.map(c => `\n\n[^${c.id}]: ${c.speaker} (${c.start_time}–${c.end_time})`).join('')
+}
 
 // Parse complete SSE events out of `buffer`; returns them plus the unparsed remainder.
 function parseSse(buffer: string): [StreamEvent[], string] {
@@ -27,7 +37,7 @@ export function SummarizeTab() {
     const [language, setLanguage] = useState('en-US')
     const [summaryLanguage, setSummaryLanguage] = useState('en-US')
     const [diarization, setDiarization] = useState(true)
-    const [citations, setCitations] = useState(true)
+    const [citations] = useState(true)
     const [profanityFilter, setProfanityFilter] = useState(false)
     const [removeSentiment, setRemoveSentiment] = useState(false)
     const [template, setTemplate] = useState('') // '' = automatic, 'custom' = custom_template
@@ -36,6 +46,7 @@ export function SummarizeTab() {
     const [busy, setBusy] = useState(false)
     const [transcript, setTranscript] = useState('')
     const [summary, setSummary] = useState('')
+    const [summaryCitations, setSummaryCitations] = useState<Citation[]>([])
     const [events, setEvents] = useState<StreamEvent[]>([])
     const [error, setError] = useState<string | null>(null)
 
@@ -44,6 +55,9 @@ export function SummarizeTab() {
         setEvents(prev => [...prev, { event, data: data.slice(0, 300) }].slice(-300))
         let json: Record<string, unknown>
         try { json = JSON.parse(data) } catch { return }
+        if (Array.isArray(json.citations)) {
+            setSummaryCitations(json.citations as Citation[])
+        }
         if (event === 'transcribe_complete') {
             const t = json.transcript as { result?: { text_display?: string } } | undefined
             setTranscript(t?.result?.text_display ?? '')
@@ -62,6 +76,7 @@ export function SummarizeTab() {
         setBusy(true)
         setTranscript('')
         setSummary('')
+        setSummaryCitations([])
         setEvents([])
         setError(null)
 
@@ -127,7 +142,7 @@ export function SummarizeTab() {
                             </select>
                         </Field>
                         <ToggleRow label="Speaker diarization" checked={diarization} onChange={setDiarization} />
-                        <ToggleRow label="Citations" hint="Footnote markers such as [^1]" checked={citations} onChange={setCitations} />
+                        {/* <ToggleRow label="Citations" hint="Footnote markers such as [^1]" checked={citations} onChange={setCitations} /> */}
                         <ToggleRow label="Profanity filter" checked={profanityFilter} onChange={setProfanityFilter} />
                         <ToggleRow label="Remove sentiment" hint="Drop emotional language" checked={removeSentiment} onChange={setRemoveSentiment} />
                     </div>
@@ -148,7 +163,7 @@ export function SummarizeTab() {
                 {error && <ErrorNote>{error}</ErrorNote>}
                 <Card>
                     <SectionHeading title="Summary" />
-                    {summary ? <MarkdownContent>{summary}</MarkdownContent> : <span className="text-xs text-gray-300">The streamed summary appears here…</span>}
+                    {summary ? <MarkdownContent>{withCitations(summary, summaryCitations)}</MarkdownContent> : <span className="text-xs text-gray-300">The streamed summary appears here…</span>}
                 </Card>
                 <Card>
                     <SectionHeading title="Transcript" />
