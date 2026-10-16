@@ -2,8 +2,15 @@ import type { Server } from 'node:http'
 import { WebSocket, WebSocketServer, type RawData } from 'ws'
 import { generateJWT, ZOOM_API_BASE_URL } from '../util.ts'
 
-const SCRIBE_LIVE_PATH = '/live/scribe'
-const SCRIBE_LIVE_ENDPOINT = `${ZOOM_API_BASE_URL.replace(/^https/, 'wss')}/aiservices/scribe/live`
+const WSS_ROOT = ZOOM_API_BASE_URL.replace(/^https/, 'wss')
+
+// Browser path -> Zoom WebSocket endpoint and subprotocol. The relay injects a fresh JWT,
+// because browsers can't set the Authorization header on a WebSocket.
+const ROUTES: Record<string, { endpoint: string; protocol: string }> = {
+    '/live/scribe': { endpoint: `${WSS_ROOT}/aiservices/scribe/live`, protocol: 'live-asr' },
+    // Voice Agent is served under the /ws root path.
+    '/live/voice-agent': { endpoint: `${WSS_ROOT}/ws/aiservices/voice-agent/live`, protocol: 'voice-agent.zoom.v2' },
+}
 const MAX_QUEUED_BYTES = 8 * 1024 * 1024
 const MAX_QUEUED_FRAMES = 256
 
@@ -13,23 +20,24 @@ function frameSize(data: RawData): number {
     return data.reduce((bytes, chunk) => bytes + chunk.length, 0)
 }
 
-export function attachScribeLiveRelay(server: Server) {
-    // noServer: route the upgrade ourselves so only the Scribe live path is proxied.
+export function attachLiveRelays(server: Server) {
+    // noServer: route the upgrade ourselves so only the live paths are proxied.
     const wss = new WebSocketServer({ noServer: true })
 
     server.on('upgrade', (req, socket, head) => {
         const { pathname } = new URL(req.url ?? '', `http://${req.headers.host ?? 'localhost'}`)
-        if (pathname === SCRIBE_LIVE_PATH) {
-            wss.handleUpgrade(req, socket, head, (client) => wss.emit('connection', client))
+        const route = ROUTES[pathname]
+        if (route) {
+            wss.handleUpgrade(req, socket, head, (client) => wss.emit('connection', client, route))
         } else {
             socket.destroy()
         }
     })
 
-    wss.on('connection', (client) => {
-        const upstream = new WebSocket(SCRIBE_LIVE_ENDPOINT, ['live-asr'], {
+    wss.on('connection', (client: WebSocket, route: { endpoint: string; protocol: string }) => {
+        const upstream = new WebSocket(route.endpoint, [route.protocol], {
             headers: { Authorization: `Bearer ${generateJWT()}` },
-            perMessageDeflate: false, // raw PCM barely compresses; skip per-frame zlib work
+            perMessageDeflate: false, // audio barely compresses; skip per-frame zlib work
         })
         const queue: Array<[RawData, boolean]> = [] // buffer client frames until upstream opens
         let queuedBytes = 0
@@ -86,7 +94,7 @@ export function attachScribeLiveRelay(server: Server) {
                         ? 'Endpoint returned 404 — the credentials likely aren\'t provisioned for Build Account or Universal Credit.'
                         : status === 429
                             ? 'Rate limited by Zoom (429). Retry shortly.'
-                            : `Zoom returned HTTP ${status} on the live-ASR handshake.`
+                            : `Zoom returned HTTP ${status} on the WebSocket handshake.`
             fail(hint)
             res.resume() // drain so the socket can be freed
         })

@@ -13,17 +13,18 @@ import { trpc, type RouterInputs } from '../../lib/trpc'
 import { defaultBatchForm, type BatchFormState, type BatchInputMode, type BatchModeDescription, type BatchOutputLayout } from './formTypes'
 
 export type BatchProduct = 'scribe' | 'summarizer' | 'translator'
-export type BatchConfig<P extends BatchProduct> = Required<NonNullable<RouterInputs[P]['batch']['submit']['config']>>
+export type BatchConfig<P extends BatchProduct> = NonNullable<RouterInputs[P]['batch']['submit']['config']>
 
 // Full batch-jobs tab (submit form, response panel, jobs list) for any product with a batch router.
-export function BatchTab<P extends BatchProduct>({ product, defaultConfig, modeDescriptions, configTitle, renderConfig }: {
+// C is the form's config type, inferred from defaultConfig, so a product can keep a stricter shape than its API input.
+export function BatchTab<P extends BatchProduct, C extends BatchConfig<P>>({ product, defaultConfig, modeDescriptions, configTitle, renderConfig }: {
     product: P
-    defaultConfig: BatchConfig<P>
+    defaultConfig: C
     modeDescriptions: Record<BatchInputMode, BatchModeDescription>
     configTitle: string
-    renderConfig: (config: BatchConfig<P>, onChange: (config: BatchConfig<P>) => void) => React.ReactNode
+    renderConfig: (config: C, onChange: (config: C) => void) => React.ReactNode
 }) {
-    const [form, setForm] = useState<BatchFormState<BatchConfig<P>>>({ ...defaultBatchForm, config: defaultConfig })
+    const [form, setForm] = useState<BatchFormState<C>>({ ...defaultBatchForm, config: defaultConfig })
     const onUpdate = (patch: Partial<typeof form>) => setForm(f => ({ ...f, ...patch }))
     const [filesJobId, setFilesJobId] = useState<string | null>(null)
 

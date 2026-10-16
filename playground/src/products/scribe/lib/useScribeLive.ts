@@ -1,4 +1,21 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import type { AsrConfig } from './constants'
+import type { EventRecord } from '../../../components/EventLog'
+import { eventTime } from '../../../lib/utils'
+
+export type LiveSegment = { text: string; speaker?: string; language?: string; polished?: string }
+
+// Build the Live session.update from the shared Scribe form. Live has no channel separation.
+function toSessionUpdate({ text_polishing, vocabulary, ...config }: AsrConfig, captions: boolean) {
+    const phrases = vocabulary?.phrases.map(p => p.trim()).filter(Boolean)
+    return {
+        type: 'session.update',
+        // channel_separation is set to undefined so JSON.stringify drops it.
+        config: { ...config, channel_separation: undefined, interim_results: captions, ...(phrases?.length && { vocabulary: { phrases } }) },
+        audio: { format: 'pcm16' },
+        ...(text_polishing && { outputs: { text_polishing: { enabled: true, include_transcript: true } } }),
+    }
+}
 
 /**
  * Captures the built-in mic, converts it to 16 kHz mono PCM16 via an AudioWorklet,
@@ -7,11 +24,11 @@ import { useCallback, useEffect, useRef, useState } from 'react'
  */
 export function useScribeLive() {
     const [status, setStatus] = useState<ScribeStatus>('idle')
-    const [segments, setSegments] = useState<string[]>([])
+    const [segments, setSegments] = useState<LiveSegment[]>([])
     const [interim, setInterim] = useState('')
     const [error, setError] = useState<string | null>(null)
     const [latencyMs, setLatencyMs] = useState<number | null>(null)
-    const [events, setEvents] = useState<ScribeEventRecord[]>([])
+    const [events, setEvents] = useState<EventRecord[]>([])
 
     const wsRef = useRef<WebSocket | null>(null)
     const ctxRef = useRef<AudioContext | null>(null)
@@ -24,9 +41,7 @@ export function useScribeLive() {
 
     const recordEvent = useCallback((body: string, type: string | null) => {
         const id = (eventIdRef.current += 1)
-        const now = new Date()
-        const time = now.toLocaleTimeString([], { hour12: false }) + '.' + String(now.getMilliseconds()).padStart(3, '0')
-        setEvents(prev => [{ id, time, type, body }, ...prev].slice(0, 300))
+        setEvents(prev => [{ id, time: eventTime(), type, body }, ...prev].slice(0, 300))
     }, [])
 
     const teardownAudio = useCallback(() => {
@@ -57,7 +72,7 @@ export function useScribeLive() {
         teardownAudio()
     }, [teardownAudio])
 
-    const start = useCallback(async (language: string) => {
+    const start = useCallback(async (asrConfig: AsrConfig, captions: boolean) => {
         const sessionId = (sessionIdRef.current += 1)
         setError(null)
         setSegments([])
@@ -129,11 +144,7 @@ export function useScribeLive() {
                     ws.close()
                     return
                 }
-                ws.send(JSON.stringify({
-                    type: 'session.update',
-                    audio: { format: 'pcm16' },
-                    language,
-                }))
+                ws.send(JSON.stringify(toSessionUpdate(asrConfig, captions)))
                 // Stay "connecting" until the relay confirms Zoom is connected (relay.ready).
             }
 
@@ -154,8 +165,9 @@ export function useScribeLive() {
                 recordEvent(JSON.stringify(event, null, 2), type)
 
                 if (event.type === 'transcription.completed') {
-                    const t = String(event.transcript ?? '').trim()
-                    if (t) setSegments(prev => [...prev, t])
+                    const text = String(event.transcript ?? '').trim()
+                    const polished = event.outputs?.text_polishing?.text
+                    if (text || polished) setSegments(prev => [...prev, { text, speaker: event.speaker, language: event.language, polished }])
                     setInterim('')
                     if (typeof event.transcription_latency_ms === 'number') setLatencyMs(event.transcription_latency_ms)
                 } else if (event.type === 'transcription.delta') {
@@ -238,18 +250,14 @@ function releaseAudio(node: AudioNode | null, source: AudioNode | null, stream: 
 
 export type ScribeStatus = 'idle' | 'connecting' | 'recording' | 'stopping' | 'error'
 
-export type ScribeEventRecord = {
-    id: number
-    time: string
-    type: string | null
-    body: string
-}
-
 type ScribeWsEvent = {
     type?: string
     session_id?: string
     item_id?: string
     transcript?: string
+    speaker?: string
+    language?: string
+    outputs?: { text_polishing?: { text?: string } }
     delta?: string
     audio_start_ms?: number
     audio_end_ms?: number

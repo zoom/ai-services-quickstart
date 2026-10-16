@@ -136,7 +136,7 @@ export function FastTab() {
     const busy = transcribeMutation.isPending
 
     return (
-        <div className="lg:grid lg:grid-cols-[3fr_2fr] lg:items-start gap-5">
+        <div className="lg:grid lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] lg:items-start gap-5">
             <form id="fast-form" onSubmit={handleSubmit} className="flex flex-col gap-5">
                 <Card>
                     <SectionHeading title="Audio Source" />
@@ -226,6 +226,8 @@ export function FastTab() {
                     error={transcribeMutation.error?.message}
                     text={transcribeMutation.data?.result?.text_display}
                     segments={transcribeMutation.data?.result?.segments}
+                    polished={transcribeMutation.data?.outputs?.text_polishing?.text}
+                    language={transcribeMutation.data?.result?.language}
                 />
                 <JsonResult data={busy ? null : (transcribeMutation.data ?? null)} loading={busy} />
             </div>

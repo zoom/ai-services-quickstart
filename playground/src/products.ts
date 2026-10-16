@@ -6,6 +6,11 @@ import { FastTab as SummarizerFastTab } from './products/summarizer/tabs/FastTab
 import { BatchTab as SummarizerBatchTab } from './products/summarizer/tabs/BatchTab'
 import { FastTab as TranslatorFastTab } from './products/translator/tabs/FastTab'
 import { BatchTab as TranslatorBatchTab } from './products/translator/tabs/BatchTab'
+import { LiveTab as VoiceAgentLiveTab } from './products/voice-agent/tabs/LiveTab'
+import { SummarizeTab as SpeechSummarizationTab } from './products/speech-summarization/tabs/SummarizeTab'
+import { GenerateTab as ClinicalNotesGenerateTab } from './products/clinical-notes/tabs/GenerateTab'
+import { JobTab as ClinicalNotesJobTab } from './products/clinical-notes/tabs/JobTab'
+import { DecideTab as DecisionsTab } from './products/decisions/tabs/DecideTab'
 
 export type ProductTab = {
     id: string
@@ -48,6 +53,39 @@ export const PRODUCTS: Product[] = [
         tabs: [
             { id: 'fast', label: 'Fast', hint: 'Summarize transcript text inline - up to 96 KB', component: SummarizerFastTab },
             { id: 'batch', label: 'Batch', hint: 'Summarize transcript files via storage jobs', component: SummarizerBatchTab },
+        ],
+    },
+    {
+        id: 'speech-summarization',
+        label: 'Speech Summarization',
+        defaultTab: 'summarize',
+        tabs: [
+            { id: 'summarize', label: 'Summarize', hint: 'Transcribe a recording and stream a summary', component: SpeechSummarizationTab },
+        ],
+    },
+    {
+        id: 'voice-agent',
+        label: 'Voice Agent',
+        defaultTab: 'live',
+        tabs: [
+            { id: 'live', label: 'Live', hint: 'Talk to a voice agent in real time', component: VoiceAgentLiveTab },
+        ],
+    },
+    {
+        id: 'clinical-notes',
+        label: 'Clinical Notes',
+        defaultTab: 'generate',
+        tabs: [
+            { id: 'generate', label: 'Generate', hint: 'Transcribe a recording and generate a note', component: ClinicalNotesGenerateTab },
+            { id: 'jobs', label: 'Jobs', hint: 'Submit a recording URL as an asynchronous job', component: ClinicalNotesJobTab },
+        ],
+    },
+    {
+        id: 'decisions',
+        label: 'Decisions',
+        defaultTab: 'decide',
+        tabs: [
+            { id: 'decide', label: 'Decide', hint: 'Evaluate typed questions against shared input', component: DecisionsTab },
         ],
     },
 ]

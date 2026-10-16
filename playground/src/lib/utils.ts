@@ -12,3 +12,8 @@ export function readFileAsDataUri(blob: Blob): Promise<string> {
         reader.readAsDataURL(blob)
     })
 }
+
+// HH:MM:SS.mmm timestamp for an event log entry.
+export function eventTime(now = new Date()) {
+    return now.toLocaleTimeString([], { hour12: false }) + '.' + String(now.getMilliseconds()).padStart(3, '0')
+}

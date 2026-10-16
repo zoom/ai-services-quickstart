@@ -4,7 +4,8 @@ import express from 'express'
 import fs from 'fs'
 import path from 'path'
 import { createExpressMiddleware } from '@trpc/server/adapters/express'
-import { attachScribeLiveRelay } from './live/scribe.ts'
+import { attachLiveRelays } from './live/relay.ts'
+import { speechSummarizationHandler, speechSummarizationUpload } from './routers/speechSummarization.ts'
 import { appRouter } from './routers/index.ts'
 
 const app = express()
@@ -21,12 +22,15 @@ app.use(express.json({ limit: '150mb' }))
 
 app.use('/trpc', createExpressMiddleware({ router: appRouter }))
 
+// Speech Summarization streams Server-Sent Events, so it's a plain route instead of tRPC.
+app.post('/api/speech-summarization', speechSummarizationUpload, speechSummarizationHandler)
+
 // Single-origin deploy: serve the built playground so its relative /trpc and /live
 // calls resolve here. Skipped in dev (no build) where Vite serves the SPA and proxies.
 const playgroundDist = path.join(process.cwd(), 'playground', 'dist')
 if (fs.existsSync(playgroundDist)) {
     app.use(express.static(playgroundDist))
-    app.get(/^(?!\/(trpc|webhooks|live)).*/, (_req, res) =>
+    app.get(/^(?!\/(trpc|webhooks|live|api)).*/, (_req, res) =>
         res.sendFile(path.join(playgroundDist, 'index.html')))
 }
 
@@ -71,4 +75,4 @@ function handleWebhook(req: express.Request, res: express.Response) {
 }
 
 const server = app.listen(port, () => console.log(`AI Services API listening on port ${port}`))
-attachScribeLiveRelay(server)
+attachLiveRelays(server)

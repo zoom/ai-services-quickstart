@@ -135,19 +135,25 @@ const submitSchema = z.object({
 })
 
 // The batch job API is identical across AI services; only the config schema differs.
-export function makeBatchRouter<TConfig extends z.ZodType>(makeRequest: ApiRequest, configSchema: TConfig, defaultConfig?: Record<string, unknown>) {
+// `toBody` maps the playground config onto request fields; by default it's sent as `config`.
+export function makeBatchRouter<TConfig extends z.ZodType>(
+    makeRequest: ApiRequest,
+    configSchema: TConfig,
+    defaultConfig?: z.infer<TConfig>,
+    toBody: (config: z.infer<TConfig> | undefined) => Record<string, unknown> = config => ({ config }),
+) {
     return router({
         submit: procedure
             .input(submitSchema.extend({ config: configSchema }))
             .mutation(async ({ input: raw }) => {
                 // zod can't infer through the generic config; the base fields are what we read here.
-                const values = raw as z.infer<typeof submitSchema> & { config?: unknown }
+                const values = raw as z.infer<typeof submitSchema> & { config?: z.infer<TConfig> }
                 const { input, output } = resolveJobIO(values.input, values.output)
                 const data = await makeRequest('/jobs', {
                     json: {
                         ...(input && { input }),
                         output,
-                        config: values.config ?? defaultConfig,
+                        ...toBody(values.config ?? defaultConfig),
                         ...(values.reference_id && { reference_id: values.reference_id }),
                         ...(values.notifications?.webhook_url && { notifications: values.notifications }),
                     },
