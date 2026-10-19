@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { parseApiResponse } from '../responses.ts'
 import { router, procedure } from '../trpc.ts'
 import { createApiRequest } from '../util.ts'
 
@@ -24,10 +25,10 @@ const jobResponseSchema = notesResponseSchema.extend({
 })
 
 // The API takes an upload as multipart and a recording URL as JSON; it doesn't accept data URLs.
-async function generateFromDataUri(dataUri: string, template: string) {
+async function generateFromDataUri(dataUri: string, template: string, fileName = 'recording') {
     const blob = await (await fetch(dataUri)).blob()
     const form = new FormData()
-    form.append('file', blob, 'recording')
+    form.append('file', blob, fileName)
     form.append('template', template)
     return makeClinicalNotesRequest('/generate', { method: 'POST', body: form })
 }
@@ -35,19 +36,19 @@ async function generateFromDataUri(dataUri: string, template: string) {
 export const clinicalNotesRouter = router({
     // `file` is a data URI (upload) or an https:// / s3:// recording URL.
     generate: procedure
-        .input(z.object({ file: z.string().min(1), template: templateSchema }))
+        .input(z.object({ file: z.string().min(1), template: templateSchema, fileName: z.string().optional() }))
         .mutation(async ({ input }) => {
             const data = input.file.startsWith('data:')
-                ? await generateFromDataUri(input.file, input.template)
-                : await makeClinicalNotesRequest('/generate', { json: input })
-            return notesResponseSchema.parse(data)
+                ? await generateFromDataUri(input.file, input.template, input.fileName)
+                : await makeClinicalNotesRequest('/generate', { json: { file: input.file, template: input.template } })
+            return parseApiResponse(notesResponseSchema, data)
         }),
 
     submitJob: procedure
         .input(z.object({ file: z.string().url(), template: templateSchema }))
-        .mutation(async ({ input }) => jobResponseSchema.parse(await makeClinicalNotesRequest('/job', { json: input }))),
+        .mutation(async ({ input }) => parseApiResponse(jobResponseSchema, await makeClinicalNotesRequest('/job', { json: { file: input.file, template: input.template } }))),
 
     getJob: procedure
         .input(z.object({ jobId: z.string() }))
-        .mutation(async ({ input }) => jobResponseSchema.parse(await makeClinicalNotesRequest(`/job/${encodeURIComponent(input.jobId)}`))),
+        .mutation(async ({ input }) => parseApiResponse(jobResponseSchema, await makeClinicalNotesRequest(`/job/${encodeURIComponent(input.jobId)}`))),
 })

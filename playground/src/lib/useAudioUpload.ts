@@ -16,7 +16,7 @@ export function useAudioUpload() {
             fileRef,
             fileName: uploaded?.file.name ?? null,
             audioUrl: uploaded?.url ?? null,
-            onFile: (file: File | undefined) => { if (file) setUploaded({ file, url: URL.createObjectURL(file) }) },
+            onFile: (file: File | undefined) => { setUploaded(file ? { file, url: URL.createObjectURL(file) } : null) },
         },
     }
 }

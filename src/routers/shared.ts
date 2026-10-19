@@ -1,6 +1,9 @@
 import { z } from 'zod'
+import { parseApiResponse } from '../responses.ts'
 import { getEnvAwsCredentials, isS3, withAwsAuth, type ApiRequest } from '../util.ts'
 import { procedure, router } from '../trpc.ts'
+import { TRPCError } from '@trpc/server'
+import { batchManifestError } from '../config/batchManifest.ts'
 
 const awsCredsSchema = z.object({
     access_key_id: z.string(),
@@ -30,9 +33,15 @@ const batchInputSchema = z.object({
     source: z.string().optional(),
     mode: z.enum(['SINGLE', 'PREFIX', 'MANIFEST']),
     uri: z.string().optional(),
-    manifest: z.array(z.string()).optional(),
+    manifest: z.array(z.string().trim().min(1)).min(1).max(1000).optional(),
     filters: batchFiltersSchema,
     auth: z.object({ aws: awsCredsSchema.optional() }).optional(),
+}).superRefine((input, ctx) => {
+    if (input.mode === 'MANIFEST') {
+        const error = batchManifestError(input.manifest ?? [])
+        if (error) ctx.addIssue({ code: 'custom', path: ['manifest'], message: error })
+    }
+    if (input.mode !== 'MANIFEST' && !input.uri?.trim()) ctx.addIssue({ code: 'custom', path: ['uri'], message: 'An input URI is required.' })
 })
 
 const apiErrorSchema = z.object({
@@ -86,15 +95,16 @@ const jobResponseSchema = z.object({
 const fileSchema = z.object({
     file_id: z.string(),
     input_uri: z.string(),
-    output_uri: z.string(),
+    output_uri: z.string().nullable().optional(),
     state: z.string(),
     duration_sec: z.number().optional(),
+    usage: z.unknown().optional(),
     error: apiErrorSchema.optional(),
 })
 
 const filesResponseSchema = z.object({
     files: z.array(fileSchema),
-    next_cursor: z.string().optional(),
+    next_cursor: z.string().nullable().optional(),
 })
 
 const listResponseSchema = z.object({
@@ -103,7 +113,7 @@ const listResponseSchema = z.object({
         state: z.string(),
         submitted_at: z.string().optional(),
     })),
-    next_cursor: z.string().optional(),
+    next_cursor: z.string().nullable().optional(),
 })
 
 type BatchInput = z.infer<typeof batchInputSchema>
@@ -115,14 +125,15 @@ function resolveJobIO(input: BatchInput | undefined, output: BatchOutput | undef
     const inputSource = input?.source ?? (input?.uri?.startsWith('s3://') ? 'S3' : undefined)
     const inputAws = isS3(inputSource) ? (input?.auth?.aws ?? envAws) : undefined
 
+    const layout = output?.layout ?? 'ADJACENT'
     const outputBase: BatchOutput = {
         destination: output?.destination ?? 'S3',
-        uri: output?.uri ?? input?.uri,
-        layout: output?.layout ?? 'ADJACENT',
+        ...(layout !== 'ADJACENT' && { uri: output?.uri ?? input?.uri }),
+        layout,
         overwrite: output?.overwrite ?? false,
         ...(output?.auth && { auth: output.auth }),
     }
-    const outputAws = isS3(outputBase.destination) ? (outputBase.auth?.aws ?? envAws) : undefined
+    const outputAws = isS3(outputBase.destination) && !outputBase.uri?.startsWith('https://') ? (outputBase.auth?.aws ?? envAws) : undefined
 
     return { input: withAwsAuth(input, inputAws), output: withAwsAuth(outputBase, outputAws) }
 }
@@ -141,6 +152,7 @@ export function makeBatchRouter<TConfig extends z.ZodType>(
     configSchema: TConfig,
     defaultConfig?: z.infer<TConfig>,
     toBody: (config: z.infer<TConfig> | undefined) => Record<string, unknown> = config => ({ config }),
+    options: { singleOutput?: boolean } = {},
 ) {
     return router({
         submit: procedure
@@ -148,6 +160,9 @@ export function makeBatchRouter<TConfig extends z.ZodType>(
             .mutation(async ({ input: raw }) => {
                 // zod can't infer through the generic config; the base fields are what we read here.
                 const values = raw as z.infer<typeof submitSchema> & { config?: z.infer<TConfig> }
+                if (values.output?.layout === 'SINGLE' && (!options.singleOutput || values.input?.mode !== 'SINGLE')) {
+                    throw new TRPCError({ code: 'BAD_REQUEST', message: 'Single-file output is supported only for Scribe with SINGLE input.' })
+                }
                 const { input, output } = resolveJobIO(values.input, values.output)
                 const data = await makeRequest('/jobs', {
                     json: {
@@ -158,26 +173,33 @@ export function makeBatchRouter<TConfig extends z.ZodType>(
                         ...(values.notifications?.webhook_url && { notifications: values.notifications }),
                     },
                 })
-                return jobResponseSchema.parse(data)
+                return parseApiResponse(jobResponseSchema, data)
             }),
 
         list: procedure
-            .input(z.object({ stateFilter: z.string().optional() }))
+            .input(z.object({ stateFilter: z.string().optional(), next_page_token: z.string().optional(), page_size: z.number().int().min(1).max(200).optional() }))
             .query(async ({ input }) => {
-                const params = input.stateFilter ? `?state=${encodeURIComponent(input.stateFilter)}` : ''
-                return listResponseSchema.parse(await makeRequest(`/jobs${params}`))
+                const params = new URLSearchParams()
+                if (input.stateFilter) params.set('state', input.stateFilter)
+                if (input.next_page_token) params.set('next_page_token', input.next_page_token)
+                if (input.page_size) params.set('page_size', String(input.page_size))
+                return parseApiResponse(listResponseSchema, await makeRequest(`/jobs${params.size ? `?${params}` : ''}`))
             }),
 
         getStatus: procedure
             .input(z.object({ jobId: z.string() }))
-            .mutation(async ({ input }) => jobResponseSchema.parse(await makeRequest(`/jobs/${encodeURIComponent(input.jobId)}`))),
+            .mutation(async ({ input }) => parseApiResponse(jobResponseSchema, await makeRequest(`/jobs/${encodeURIComponent(input.jobId)}`))),
 
         getFiles: procedure
             .input(z.object({ jobId: z.string(), next_page_token: z.string().optional() }))
             .mutation(async ({ input }) => {
                 const params = input.next_page_token ? `?next_page_token=${encodeURIComponent(input.next_page_token)}` : ''
-                return filesResponseSchema.parse(await makeRequest(`/jobs/${encodeURIComponent(input.jobId)}/files${params}`))
+                return parseApiResponse(filesResponseSchema, await makeRequest(`/jobs/${encodeURIComponent(input.jobId)}/files${params}`))
             }),
+
+        getFile: procedure
+            .input(z.object({ jobId: z.string().min(1), fileId: z.string().min(1) }))
+            .mutation(async ({ input }) => parseApiResponse(fileSchema, await makeRequest(`/jobs/${encodeURIComponent(input.jobId)}/files/${encodeURIComponent(input.fileId)}`))),
 
         cancel: procedure
             .input(z.object({ jobId: z.string() }))

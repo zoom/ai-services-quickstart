@@ -331,7 +331,7 @@ function AnswerCard({ answer, question }: { answer: Answer; question?: Question 
         <div className="rounded-xl border border-gray-200 bg-white px-4 py-3.5" style={{ animation: 'riseIn .3s ease both' }}>
             <div className="flex items-baseline justify-between gap-3 mb-2.5">
                 <span className="text-[10px] font-semibold uppercase tracking-widest text-gray-500">{meta ? `${meta.glyph} ` : ''}{answer.name ?? question?.instructions ?? answer.type}</span>
-                {answer.confidence != null && <span className="text-[11px] text-gray-400 tabular-nums">confidence {pct(answer.confidence)}</span>}
+                {answer.confidence != null && <span className="text-[11px] text-gray-400 tabular-nums">confidence {answer.confidence}</span>}
             </div>
 
             {answer.type === 'predicate' && (
@@ -363,7 +363,7 @@ function AnswerCard({ answer, question }: { answer: Answer; question?: Question 
 export function DecideTab() {
     const [input, setInput] = useState(TEMPLATES[0].input)
     const [drafts, setDrafts] = useState<Draft[]>(TEMPLATES[0].questions)
-    const [model, setModel] = useState<'zoom-decisions-standard' | 'zoom-decisions-pro'>('zoom-decisions-standard')
+    const [model, setModel] = useState<'zoom-decisions' | 'zoom-decisions-standard' | 'zoom-decisions-pro'>('zoom-decisions')
     const [image, setImage] = useState<string | null>(null) // inline data URL
     const [detail, setDetail] = useState<'auto' | 'low' | 'high' | 'original'>('auto')
     const [showJson, setShowJson] = useState(false)
@@ -371,11 +371,11 @@ export function DecideTab() {
 
     const issues = validate(drafts)
     const questions = toQuestions(drafts)
-    const valid = Object.keys(issues).length === 0 && input.trim().length > 0
+    const valid = Object.keys(issues).length === 0 && (input.trim().length > 0 || !!image)
 
     // With an image, input becomes a user message with text and image parts, and image input must be enabled.
     const request: RouterInputs['decisions']['decide'] = image
-        ? { input: [{ role: 'user', content: [{ type: 'input_text', text: input }, { type: 'input_image', image_url: image, detail }] }], questions, model, enable_image_input: true }
+        ? { input: [{ role: 'user', content: [...(input.trim() ? [{ type: 'input_text' as const, text: input }] : []), { type: 'input_image', image_url: image, detail }] }], questions, model, enable_image_input: true }
         : { input, questions, model }
 
     const update = (id: number, patch: Partial<Draft>) => setDrafts(ds => ds.map(d => (d.id === id ? { ...d, ...patch } : d)))
@@ -417,6 +417,7 @@ export function DecideTab() {
                         {image && <img src={image} alt="Selected input" className="max-h-40 rounded-lg border border-gray-200 self-start" />}
                         <Field label="Model" hint="Pro is optimized for higher accuracy">
                             <select className={selectCls} value={model} onChange={e => setModel(e.target.value as typeof model)}>
+                                <option value="zoom-decisions">zoom-decisions</option>
                                 <option value="zoom-decisions-standard">zoom-decisions-standard</option>
                                 <option value="zoom-decisions-pro">zoom-decisions-pro</option>
                             </select>

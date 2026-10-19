@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react'
 import type { BatchApiResponse, FilesResponse } from '../../lib/batchTypes'
+import { mergeFilePages } from './filePages'
 import { isFilesResponse } from '../../lib/batchTypes'
 
 // Returns mutation options for each batch action. Every new request bumps `seq`,
@@ -40,7 +41,7 @@ export function useBatchDetailState(invalidateJobs: () => void) {
             onSuccess: (data: FilesResponse, _vars: unknown, id: number | undefined) => {
                 if (id !== seq.current) return
                 setDetail(prev => prev && isFilesResponse(prev)
-                    ? { files: [...prev.files, ...data.files], next_cursor: data.next_cursor }
+                    ? mergeFilePages(prev, data)
                     : prev)
             },
             onError: (err: { message: string }, _vars: unknown, id: number | undefined) => {

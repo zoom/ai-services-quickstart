@@ -91,7 +91,7 @@ export function attachLiveRelays(server: Server) {
                 status === 401 || status === 403
                     ? 'Zoom rejected the token (401/403). Check ZOOM_API_KEY / ZOOM_API_SECRET.'
                     : status === 404
-                        ? 'Endpoint returned 404 — the credentials likely aren\'t provisioned for Build Account or Universal Credit.'
+                        ? 'Endpoint returned 404. Check the route and whether this account has access to the service.'
                         : status === 429
                             ? 'Rate limited by Zoom (429). Retry shortly.'
                             : `Zoom returned HTTP ${status} on the WebSocket handshake.`

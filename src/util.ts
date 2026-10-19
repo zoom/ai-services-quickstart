@@ -1,5 +1,6 @@
 import { KJUR } from 'jsrsasign'
 import dotenv from 'dotenv'
+import { apiResponseBodyError, apiResponseError, asTrpcError } from './apiErrors.ts'
 dotenv.config()
 
 export type AwsCredentials = {
@@ -62,9 +63,12 @@ export function createApiRequest(service: string) {
                 ...init.headers,
             },
         })
-        if (!res.ok) throw new Error(await res.text() || res.statusText)
+        if (!res.ok) throw asTrpcError(await apiResponseError(res, service))
         if (res.status === 204) return null
-        return res.json()
+        const data: unknown = await res.json()
+        const error = apiResponseBodyError(res, data, service)
+        if (error) throw asTrpcError(error)
+        return data
     }
 }
 

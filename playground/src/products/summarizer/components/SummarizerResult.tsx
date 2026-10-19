@@ -1,11 +1,8 @@
 import { MarkdownContent } from '../../../components/MarkdownContent'
 
-// Written out because the server schema's .catchall() erases these fields from the inferred type.
-type SummarizerResponse = {
-    task?: string
-    model?: string
-    result?: { text?: string; recap?: string; summary_text?: string; action_items?: string }
-}
+import type { RouterOutputs } from '../../../lib/trpc'
+
+type SummarizerResponse = RouterOutputs['summarizer']['summarize']
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
     return (
@@ -22,7 +19,7 @@ export function SummarizerResult({ data, error, loading }: {
     loading: boolean
 }) {
     const payload = data?.result
-    const hasContent = Boolean(payload?.text || payload?.recap || payload?.summary_text || payload?.action_items)
+    const hasContent = Boolean(payload?.text || payload?.recap || payload?.summary_text || payload?.action_items || payload?.full_summary)
 
     return (
         <div className="mb-4 rounded-xl border border-gray-200 overflow-hidden">
@@ -66,6 +63,10 @@ export function SummarizerResult({ data, error, loading }: {
                             <Section title="Action Items">
                                 <MarkdownContent>{payload.action_items}</MarkdownContent>
                             </Section>
+                        )}
+
+                        {payload?.full_summary && (
+                            <Section title="Full Summary"><MarkdownContent>{payload.full_summary}</MarkdownContent></Section>
                         )}
 
                         {(data?.task || data?.model) && (

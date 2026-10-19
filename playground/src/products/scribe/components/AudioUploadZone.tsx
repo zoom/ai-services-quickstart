@@ -1,6 +1,9 @@
-import { type RefObject } from 'react'
+import { useState, type RefObject } from 'react'
+import { scribeUploadPolicy, validateUpload, type UploadPolicy } from '../../../../../src/config/uploads'
 
 interface Props {
+    required?: boolean
+    policy?: UploadPolicy
     dragging: boolean
     setDragging: (v: boolean) => void
     fileName: string | null
@@ -9,7 +12,23 @@ interface Props {
     onFile: (file: File | undefined) => void
 }
 
-export function AudioUploadZone({ dragging, setDragging, fileName, fileRef, audioUrl, onFile }: Props) {
+export function AudioUploadZone({ dragging, setDragging, fileName, fileRef, audioUrl, onFile, required = true, policy = scribeUploadPolicy }: Props) {
+    const [error, setError] = useState<string | null>(null)
+    const selectFile = (file: File | undefined) => {
+        const message = file ? validateUpload(file, policy) : null
+        setError(message)
+        if (message || !file) {
+            if (fileRef.current) fileRef.current.value = ''
+            onFile(undefined)
+            return
+        }
+        if (fileRef.current) {
+            const dt = new DataTransfer()
+            dt.items.add(file)
+            fileRef.current.files = dt.files
+        }
+        onFile(file)
+    }
     return (
         <>
             <div
@@ -23,22 +42,17 @@ export function AudioUploadZone({ dragging, setDragging, fileName, fileRef, audi
                     e.preventDefault()
                     setDragging(false)
                     const file = e.dataTransfer.files[0]
-                    if (file && fileRef.current) {
-                        const dt = new DataTransfer()
-                        dt.items.add(file)
-                        fileRef.current.files = dt.files
-                        onFile(file)
-                    }
+                    selectFile(file)
                 }}
                 onClick={() => fileRef.current?.click()}
             >
                 <input
                     ref={fileRef}
                     type="file"
-                    accept="audio/*,video/*"
-                    required
+                    accept={policy.extensions.map(extension => `.${extension}`).join(',')}
+                    required={required}
                     className="sr-only"
-                    onChange={e => onFile(e.target.files?.[0])}
+                    onChange={e => selectFile(e.target.files?.[0])}
                 />
                 <div className="flex flex-col items-center gap-2 py-8 px-4 text-center">
                     {fileName ? (
@@ -51,12 +65,13 @@ export function AudioUploadZone({ dragging, setDragging, fileName, fileRef, audi
                         <>
                             <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-gray-500">&uarr;</div>
                             <span className="text-sm text-gray-500">Drop audio file here or <span className="text-zoom-blue font-medium">browse</span></span>
-                            <span className="text-xs text-gray-500">wav &middot; mp3 &middot; m4a &middot; flac &middot; ogg &middot; webm &middot; mp4 &middot; mov &mdash; max 100 MB</span>
+                            <span className="text-xs text-gray-500">{policy.hint}</span>
                         </>
                     )}
                 </div>
             </div>
 
+            {error && <p role="alert" className="mt-2 text-xs text-red-600">{error}</p>}
             {audioUrl && (
                 <audio src={audioUrl} controls className="mt-3 w-full rounded-lg h-10" />
             )}

@@ -1,5 +1,6 @@
 import { Card, Spinner } from '../ui'
 import { StateBadge } from './StateBadge'
+import { canCancelJob } from './formUtils'
 import { JOB_STATES } from './stateMeta'
 import type { Job } from '../../lib/batchTypes'
 
@@ -9,10 +10,18 @@ interface Props {
     stateFilter: string
     onStateFilterChange: (v: string) => void
     onRefresh: () => void
+    error?: string
+    hasPrevious: boolean
+    hasNext: boolean
+    page: number
+    pageSize: number
+    onPageSizeChange: (size: number) => void
+    onPrevious: () => void
+    onNext: () => void
     onAction: (action: 'status' | 'files' | 'cancel', jobId: string) => void
 }
 
-export function JobsList({ jobs, loadingJobs, stateFilter, onStateFilterChange, onRefresh, onAction }: Props) {
+export function JobsList({ jobs, loadingJobs, stateFilter, onStateFilterChange, onRefresh, onAction, error, hasPrevious, hasNext, page, pageSize, onPageSizeChange, onPrevious, onNext }: Props) {
     return (
         <Card className="max-h-96 overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
@@ -43,6 +52,7 @@ export function JobsList({ jobs, loadingJobs, stateFilter, onStateFilterChange, 
                 </div>
             </div>
 
+            {error && <p role="alert" className="text-xs text-red-600 mb-3">{error}</p>}
             {jobs.length === 0 ? (
                 <div className="flex flex-col items-center gap-2 py-8 text-center">
                     <p className="text-sm text-gray-500">No jobs yet. Submit one or click Refresh.</p>
@@ -71,9 +81,12 @@ export function JobsList({ jobs, loadingJobs, stateFilter, onStateFilterChange, 
                                             ] as const).map(([action, label]) => (
                                                 <button
                                                     key={action}
+                                                    type="button"
+                                                    disabled={action === 'cancel' && !canCancelJob(job.state)}
+                                                    title={action === 'cancel' && !canCancelJob(job.state) ? 'Only queued or processing jobs can be canceled' : undefined}
                                                     onClick={() => onAction(action, job.job_id)}
                                                     className={[
-                                                        'px-2 py-0.5 text-[11px] rounded-md border transition-all',
+                                                        'px-2 py-0.5 text-[11px] rounded-md border transition-all disabled:opacity-30 disabled:cursor-not-allowed',
                                                         action === 'cancel'
                                                             ? 'border-red-200 text-red-500 hover:bg-red-50'
                                                             : 'border-gray-200 text-gray-500 hover:border-gray-300 hover:text-gray-700',
@@ -90,6 +103,14 @@ export function JobsList({ jobs, loadingJobs, stateFilter, onStateFilterChange, 
                     </table>
                 </div>
             )}
+            <div className="flex items-center justify-between gap-2 mt-4 text-xs text-gray-500">
+                <label>Per page <select aria-label="Jobs per page" value={pageSize} onChange={e => onPageSizeChange(Number(e.target.value))} className="border rounded px-1 py-1">{[10, 25, 50, 100].map(size => <option key={size}>{size}</option>)}</select></label>
+                <span>Page {page}</span>
+                <div className="flex gap-2">
+                    <button type="button" disabled={!hasPrevious || loadingJobs} onClick={onPrevious} className="disabled:opacity-30">Previous</button>
+                    <button type="button" disabled={!hasNext || loadingJobs} onClick={onNext} className="disabled:opacity-30">Next</button>
+                </div>
+            </div>
         </Card>
     )
 }

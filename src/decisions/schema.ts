@@ -51,8 +51,9 @@ export const decisionsInputSchema = z.object({
             seen.add(question.name)
         })
     }),
-    model: z.enum(['zoom-decisions-standard', 'zoom-decisions-pro']).optional(),
+    model: z.enum(['zoom-decisions', 'zoom-decisions-standard', 'zoom-decisions-pro']).optional(),
     enable_image_input: z.boolean().optional(),
+    reference_id: z.string().optional(),
 }).superRefine((request, ctx) => {
     if (Array.isArray(request.input) && request.enable_image_input !== true) {
         request.input.forEach((message, messageIndex) => {

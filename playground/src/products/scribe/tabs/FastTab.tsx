@@ -57,7 +57,7 @@ export function FastTab() {
     }, [])
 
     const handleFile = (file: File | undefined) => {
-        if (file) setUploaded({ file, url: URL.createObjectURL(file) })
+        setUploaded(file ? { file, url: URL.createObjectURL(file) } : null)
     }
 
     const startRecording = async () => {

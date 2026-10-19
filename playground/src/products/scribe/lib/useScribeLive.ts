@@ -1,21 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { AsrConfig } from './constants'
+import { LiveSessionGate, polishedText, toSessionUpdate } from './config'
 import type { EventRecord } from '../../../components/EventLog'
 import { eventTime } from '../../../lib/utils'
 
-export type LiveSegment = { text: string; speaker?: string; language?: string; polished?: string }
-
-// Build the Live session.update from the shared Scribe form. Live has no channel separation.
-function toSessionUpdate({ text_polishing, vocabulary, ...config }: AsrConfig, captions: boolean) {
-    const phrases = vocabulary?.phrases.map(p => p.trim()).filter(Boolean)
-    return {
-        type: 'session.update',
-        // channel_separation is set to undefined so JSON.stringify drops it.
-        config: { ...config, channel_separation: undefined, interim_results: captions, ...(phrases?.length && { vocabulary: { phrases } }) },
-        audio: { format: 'pcm16' },
-        ...(text_polishing && { outputs: { text_polishing: { enabled: true, include_transcript: true } } }),
-    }
-}
+export type LiveSegment = { text: string; speaker?: string; language?: string; polished?: string; polishingWarning?: string }
 
 /**
  * Captures the built-in mic, converts it to 16 kHz mono PCM16 via an AudioWorklet,
@@ -38,6 +27,7 @@ export function useScribeLive() {
     const eventIdRef = useRef(0)
     const sessionIdRef = useRef(0)
     const mountedRef = useRef(true)
+    const gateRef = useRef(new LiveSessionGate())
 
     const recordEvent = useCallback((body: string, type: string | null) => {
         const id = (eventIdRef.current += 1)
@@ -53,6 +43,7 @@ export function useScribeLive() {
     }, [])
 
     const stop = useCallback(() => {
+        gateRef.current.stop()
         const ws = wsRef.current
         if (ws && ws.readyState === WebSocket.OPEN) {
             setStatus('stopping')
@@ -74,6 +65,7 @@ export function useScribeLive() {
 
     const start = useCallback(async (asrConfig: AsrConfig, captions: boolean) => {
         const sessionId = (sessionIdRef.current += 1)
+        gateRef.current.begin()
         setError(null)
         setSegments([])
         setInterim('')
@@ -136,7 +128,7 @@ export function useScribeLive() {
 
             node.port.onmessage = (e) => {
                 const sock = wsRef.current
-                if (sock && sock.readyState === WebSocket.OPEN) sock.send(e.data)
+                if (isCurrent() && gateRef.current.canStream && sock === ws && sock.readyState === WebSocket.OPEN) sock.send(e.data)
             }
 
             ws.onopen = () => {
@@ -145,7 +137,7 @@ export function useScribeLive() {
                     return
                 }
                 ws.send(JSON.stringify(toSessionUpdate(asrConfig, captions)))
-                // Stay "connecting" until the relay confirms Zoom is connected (relay.ready).
+                // Stay connecting and hold microphone audio until session.updated accepts config.
             }
 
             ws.onmessage = async (ev) => {
@@ -160,14 +152,19 @@ export function useScribeLive() {
                 try { event = JSON.parse(text) as ScribeWsEvent } catch { recordEvent(text, null); return }
                 const type = typeof event.type === 'string' ? event.type : null
 
-                if (type === 'relay.ready') { setStatus('recording'); return }
+                if (type === 'relay.ready') return
+                if (!isCurrent() || wsRef.current !== ws) return
 
                 recordEvent(JSON.stringify(event, null, 2), type)
 
-                if (event.type === 'transcription.completed') {
+                if (event.type === 'session.updated') {
+                    if (!gateRef.current.accept()) return
+                    setError(null)
+                    setStatus('recording')
+                } else if (event.type === 'transcription.completed') {
                     const text = String(event.transcript ?? '').trim()
-                    const polished = event.outputs?.text_polishing?.text
-                    if (text || polished) setSegments(prev => [...prev, { text, speaker: event.speaker, language: event.language, polished }])
+                    const polishing = polishedText(event.outputs?.text_polishing?.text)
+                    if (text || polishing.text || polishing.warning) setSegments(prev => [...prev, { text, speaker: event.speaker, language: event.language, polished: polishing.text, polishingWarning: polishing.warning }])
                     setInterim('')
                     if (typeof event.transcription_latency_ms === 'number') setLatencyMs(event.transcription_latency_ms)
                 } else if (event.type === 'transcription.delta') {
@@ -175,12 +172,17 @@ export function useScribeLive() {
                 } else if (event.type === 'error') {
                     const detail = event.error?.message ?? JSON.stringify(event)
                     setError(event.error?.code ? `${event.error.code}: ${detail}` : detail)
+                    if (!event.error?.fatal && (event.error?.code === 'invalid_config' || !gateRef.current.canStream)) {
+                        if (gateRef.current.reject()) setStatus('configuration_error')
+                    }
                     if (event.error?.fatal) {
+                        gateRef.current.close()
                         setStatus('error')
                         teardownAudio()
                         ws.close()
                     }
                 } else if (event.type === 'session.closed') {
+                    gateRef.current.close()
                     setInterim('')
                     setStatus('idle')
                     teardownAudio()
@@ -196,6 +198,7 @@ export function useScribeLive() {
             ws.onclose = () => {
                 if (!isCurrent() || wsRef.current !== ws) return
                 wsRef.current = null
+                gateRef.current.close()
                 setStatus(s => (s === 'error' ? s : 'idle'))
                 teardownAudio()
             }
@@ -208,15 +211,18 @@ export function useScribeLive() {
             setError(message.includes('Permission') || message.includes('denied')
                 ? 'Microphone permission denied. Allow mic access and try again.'
                 : message)
+            gateRef.current.close()
             setStatus('error')
             teardownAudio()
         }
     }, [teardownAudio, recordEvent])
 
     useEffect(() => {
+        const gate = gateRef.current
         mountedRef.current = true
         return () => {
             mountedRef.current = false
+            gate.close()
             sessionIdRef.current += 1
 
             const ws = wsRef.current
@@ -231,6 +237,14 @@ export function useScribeLive() {
         }
     }, [teardownAudio])
 
+    const retryConfig = useCallback((config: AsrConfig, captions: boolean) => {
+        const ws = wsRef.current
+        if (!ws || ws.readyState !== WebSocket.OPEN || !gateRef.current.configure()) return
+        setError(null)
+        setStatus('connecting')
+        ws.send(JSON.stringify(toSessionUpdate(config, captions)))
+    }, [])
+
     const clear = useCallback(() => {
         setSegments([])
         setInterim('')
@@ -238,7 +252,7 @@ export function useScribeLive() {
         setEvents([])
     }, [])
 
-    return { status, segments, interim, error, latencyMs, events, start, stop, clear }
+    return { status, segments, interim, error, latencyMs, events, start, stop, clear, retryConfig }
 }
 
 function releaseAudio(node: AudioNode | null, source: AudioNode | null, stream: MediaStream | null, ctx: AudioContext | null) {
@@ -248,7 +262,7 @@ function releaseAudio(node: AudioNode | null, source: AudioNode | null, stream: 
     try { void ctx?.close().catch(() => { /* ignore */ }) } catch { /* ignore */ }
 }
 
-export type ScribeStatus = 'idle' | 'connecting' | 'recording' | 'stopping' | 'error'
+export type ScribeStatus = 'idle' | 'connecting' | 'recording' | 'stopping' | 'error' | 'configuration_error'
 
 type ScribeWsEvent = {
     type?: string

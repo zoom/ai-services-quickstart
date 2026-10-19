@@ -1,3 +1,4 @@
+import { polishedText } from '../lib/config'
 type Segment = { id: string; speaker?: string; channel?: number; language?: string; text: string }
 
 function segmentLabel(segment: Segment, showChannel: boolean) {
@@ -12,6 +13,7 @@ export function TranscriptPanel({ loading, error, text, segments, polished, lang
     polished?: string
     language?: string
 }) {
+    const polishing = polishedText(polished)
     const errorMessage = loading ? undefined : error
     const showChannel = !!segments?.some(s => s.channel)
     const labeled = !!segments?.some(s => s.speaker || s.language) || showChannel
@@ -45,7 +47,7 @@ export function TranscriptPanel({ loading, error, text, segments, polished, lang
             {polished && !loading && (
                 <div className="px-4 py-3 border-t border-gray-200 bg-white">
                     <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-widest mb-1.5">Polished text</p>
-                    <p className={`text-sm leading-relaxed ${polished.startsWith('[polishing_failed:') ? 'text-amber-600 font-mono text-xs' : 'text-gray-800'}`}>{polished}</p>
+                    <p className={`text-sm leading-relaxed ${polishing.warning ? 'text-amber-600' : 'text-gray-800'}`}>{polishing.warning ? 'Polishing failed. The original transcript is shown above.' : polishing.text}</p>
                 </div>
             )}
         </div>

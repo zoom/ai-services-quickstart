@@ -15,16 +15,16 @@ A Node.js/Express + React playground for the [Zoom AI Services APIs](https://dev
 | **Scribe** | Fast  | Upload, record, or link (public URL) audio/video, get a transcript immediately |
 | **Scribe** | Live  | Stream your microphone and see transcripts in real time over a WebSocket, with optional Captions (partial results) |
 | **Scribe** | Batch | Transcribe a single S3 file, an S3 prefix, or a manifest of S3 URIs / public URLs |
-| **Translator** | Fast  | Translate up to 4,000 characters between 10 supported languages |
+| **Translator** | Fast  | Translate up to 4,000 characters between 29 supported locales, including all 24 EU languages, with optional source auto-detection |
 | **Translator** | Batch | Translate `.txt` files stored in S3 |
 | **Summarizer** | Fast  | Summarize a transcript (up to 96 KB) — recap, action items, summary, or full summary |
 | **Summarizer** | Batch | Summarize transcripts stored in S3 |
 | **Speech Summarization** | Summarize | Upload a recording (up to 50 MB / 2 hours) and stream its transcript and Markdown summary — automatic, predefined, or custom template, speaker/timestamp citations, sentiment removal, diarization, and profanity filter |
-| **Voice Agent** | Live | Talk to a voice agent through your microphone — ten voices, barge-in, context phrases, reasoning effort, and function calling (a `get_current_time` demo tool) |
+| **Voice Agent** | Live | Talk to a voice agent through your microphone — ten voices, barge-in, context phrases, response token limits, tool choice, and function calling (a `get_current_time` demo tool) |
 | **Clinical Notes** | Generate / Jobs | Generate a SOAP, General Medicine, or General Behavioral Health note from an upload or recording URL, synchronously or as a job |
-| **Decisions** | Decide | Evaluate predicate, choice, and score questions against shared text and an optional image, with Standard or Pro models |
+| **Decisions** | Decide | Evaluate predicate, choice, and score questions against shared text and an optional image, with the canonical `zoom-decisions` model, its Standard alias, or Pro |
 
-All Scribe modes share these options: model selection (automatic, Zoom Scribe English, **Scribe API 3B Pro High-Accuracy**, Core-9 multilingual, or Whisper for broader language coverage), automatic language detection, custom vocabulary (inline phrases or a Vocabulary Asset ID), speaker diarization, profanity filtering, and Text Polishing (en-US). Fast and Batch also support stereo channel separation.
+All Scribe modes share these options: model selection (automatic, Zoom Scribe English, **Scribe API 3B Pro High-Accuracy**, ten-language multilingual, or Whisper for broader language coverage), automatic language detection, custom vocabulary (inline phrases or a Vocabulary Asset ID), speaker diarization, profanity filtering, and Text Polishing (en-US). Fast and Batch also support stereo channel separation, word timestamps, segmentation, and once-only detection; Live supports continuous detection. Candidate languages can restrict detection. Polishing requires en-US with detection off.
 
 ## Architecture
 

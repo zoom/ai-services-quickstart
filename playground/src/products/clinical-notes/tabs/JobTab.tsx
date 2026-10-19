@@ -20,7 +20,7 @@ export function JobTab() {
                     <SectionHeading title="Submit a job" />
                     <div className="flex flex-col gap-4">
                         <Field label="Recording URL" hint="Must stay downloadable until the job finishes">
-                            <input className={inputCls} value={fileUrl} onChange={e => setFileUrl(e.target.value)} placeholder="https://example.com/consultation.wav" />
+                            <input required className={inputCls} value={fileUrl} onChange={e => setFileUrl(e.target.value)} placeholder="https://example.com/consultation.wav" />
                         </Field>
                         <TemplateSelect value={template} onChange={setTemplate} />
                     </div>
@@ -37,6 +37,7 @@ export function JobTab() {
                         </button>
                     )}
                 </div>
+                <p className="text-xs text-gray-500">Clinical Notes availability depends on your account and deployment. A 404 can mean the route or access is unavailable.</p>
                 {error && <ErrorNote>{error}</ErrorNote>}
                 {job?.state === 'SUCCEEDED' && <NoteResult data={job} />}
                 <JsonResult data={job ?? null} loading={submit.isPending || status.isPending} />

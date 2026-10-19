@@ -12,10 +12,11 @@ export function LiveTab() {
         instructions: 'You are a concise and friendly support agent. Use get_current_time when asked for the time.',
         phrases: '',
         functionCalling: true,
-        reasoningEffort: '',
+        responseTokenLimit: 'inf',
+        toolChoice: 'auto',
     })
     const set = (patch: Partial<VoiceAgentOptions>) => setOptions(o => ({ ...o, ...patch }))
-    const { status, lines, events, error, start, stop } = useVoiceAgent()
+    const { status, lines, events, error, effectiveConfig, start, stop } = useVoiceAgent()
     const active = status === 'live' || status === 'connecting'
 
     return (
@@ -37,10 +38,12 @@ export function LiveTab() {
                         <Field label="Context phrases" hint="Comma-separated names and terms">
                             <input className={inputCls} value={options.phrases} placeholder="Zoom, Voice Agent" onChange={e => set({ phrases: e.target.value })} />
                         </Field>
-                        <Field label="Reasoning effort" hint="Default omits reasoning">
-                            <select className={selectCls} value={options.reasoningEffort} onChange={e => set({ reasoningEffort: e.target.value as VoiceAgentOptions['reasoningEffort'] })}>
-                                <option value="">Default</option>
-                                {(['none', 'minimal', 'low', 'medium', 'high', 'xhigh'] as const).map(r => <option key={r} value={r}>{r}</option>)}
+                        <Field label="Response token limit" hint="Empty uses unlimited; numeric limits can end a response as incomplete">
+                            <input type="number" min={1} step={1} className={inputCls} value={options.responseTokenLimit === 'inf' ? '' : options.responseTokenLimit} placeholder="Unlimited" onChange={e => set({ responseTokenLimit: e.target.value ? Math.max(1, Math.floor(Number(e.target.value))) : 'inf' })} />
+                        </Field>
+                        <Field label="Tool choice" hint="Required calls at least one tool per response">
+                            <select disabled={!options.functionCalling} className={selectCls} value={options.functionCalling ? options.toolChoice : 'none'} onChange={e => set({ toolChoice: e.target.value as VoiceAgentOptions['toolChoice'] })}>
+                                {(['auto', 'none', 'required'] as const).map(choice => <option key={choice} value={choice}>{choice}</option>)}
                             </select>
                         </Field>
                         <ToggleRow label="Function calling" hint="Demo tool: get_current_time" checked={options.functionCalling} onChange={v => set({ functionCalling: v })} />
@@ -57,6 +60,11 @@ export function LiveTab() {
                             {status === 'connecting' ? 'Connecting…' : status === 'live' ? 'Listening — speak to the agent. Talk over it to interrupt.' : 'Uses your microphone and speakers.'}
                         </span>
                     </div>
+                    {effectiveConfig != null && <details className="mt-4 text-xs text-gray-500">
+                        <summary className="cursor-pointer font-semibold">Effective session configuration</summary>
+                        <p className="mt-2">Server-confirmed settings. Tool definitions are kept by the app and are not echoed.</p>
+                        <pre className="mt-2 max-h-64 overflow-auto whitespace-pre-wrap">{JSON.stringify(effectiveConfig, null, 2)}</pre>
+                    </details>}
                     {error && <div className="mt-3"><ErrorNote>{error}</ErrorNote></div>}
                 </Card>
 
@@ -69,6 +77,7 @@ export function LiveTab() {
                                 <p key={line.id} className={`text-sm leading-relaxed ${line.role === 'user' ? 'text-gray-800' : 'text-zoom-blue'}`}>
                                     <span className="mr-2 text-xs font-semibold uppercase tracking-wide text-gray-400">{line.role === 'user' ? 'You' : 'Agent'}</span>
                                     {line.text}
+                                    {line.interrupted && <span className="block text-xs text-amber-600">Interrupted. Transcript may include audio that did not play.</span>}
                                 </p>
                             ))}
                     </div>

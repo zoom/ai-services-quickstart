@@ -5,12 +5,13 @@ import { LANGUAGE_OPTIONS, type LanguageCode, type TranslatorConfig } from '../l
 export function TranslatorConfigForm({ value, onChange }: { value: TranslatorConfig; onChange: (v: TranslatorConfig) => void }) {
     return (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <Field label="Source Language" hint="Select source language">
+            <Field label="Source Language" hint="Auto-detect omits the source language from the request">
                 <select
                     className={selectCls}
-                    value={value.source_language}
-                    onChange={e => onChange({ ...value, source_language: e.target.value as LanguageCode })}
+                    value={value.source_language ?? ''}
+                    onChange={e => onChange({ ...value, source_language: (e.target.value || undefined) as LanguageCode | undefined })}
                 >
+                    <option value="">Auto-detect</option>
                     {LANGUAGE_OPTIONS.map(option => (
                         <option key={option.value} value={option.value}>{option.label}</option>
                     ))}

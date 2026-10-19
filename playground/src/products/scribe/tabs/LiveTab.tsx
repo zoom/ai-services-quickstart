@@ -8,6 +8,7 @@ import { useScribeLive, type ScribeStatus } from '../lib/useScribeLive'
 const STATUS_LABEL: Record<ScribeStatus, string> = {
     idle: 'Ready',
     connecting: 'Connecting',
+    configuration_error: 'Update configuration',
     recording: 'Listening',
     stopping: 'Wrapping up',
     error: 'Error',
@@ -41,10 +42,11 @@ function Waveform({ live }: { live: boolean }) {
 export function LiveTab() {
     const [config, setConfig] = useState<AsrConfig>(defaultAsrConfig)
     const [captions, setCaptions] = useState(true)
-    const { status, segments, interim, error, latencyMs, events, start, stop, clear } = useScribeLive()
+    const { status, segments, interim, error, latencyMs, events, start, stop, clear, retryConfig } = useScribeLive()
 
     const live = status === 'recording'
-    const connecting = status === 'connecting'
+    const recoverable = status === 'configuration_error'
+    const connecting = status === 'connecting' || recoverable
     const active = live || connecting || status === 'stopping'
 
     const transcriptRef = useRef<HTMLDivElement>(null)
@@ -115,7 +117,7 @@ export function LiveTab() {
                     </div>
 
                     <p className="relative mt-4 text-center text-xs text-gray-400">
-                        {connecting ? 'Opening the stream to Zoom Scribe…'
+                        {recoverable ? 'Edit the settings below, then retry configuration. Microphone audio is paused.' : connecting ? 'Waiting for Zoom Scribe to accept the configuration…'
                             : status === 'stopping' ? 'Flushing the final transcript…'
                                 : live ? 'Speak — completed segments appear as they arrive.'
                                     : 'Tap the mic to stream your microphone in real time.'}
@@ -138,9 +140,10 @@ export function LiveTab() {
                             Clear
                         </button>
                     </div>
-                    <fieldset disabled={active} className="flex flex-col gap-3 disabled:opacity-60">
+                    <fieldset disabled={active && !recoverable} className="flex flex-col gap-3 disabled:opacity-60">
                         <ToggleRow label="Captions" hint="Show partial results before each segment completes" checked={captions} onChange={setCaptions} />
                         <AsrConfigForm value={config} onChange={setConfig} live />
+                        {recoverable && <button type="button" onClick={() => retryConfig(config, captions)} className="px-4 py-2 text-sm font-semibold rounded-lg bg-zoom-blue text-white">Retry configuration</button>}
                     </fieldset>
                 </Card>
 
@@ -161,6 +164,7 @@ export function LiveTab() {
                                             <span className="mr-2 text-xs font-semibold text-zoom-blue">{[s.speaker, s.language].filter(Boolean).join(' · ')}</span>
                                         )}
                                         {s.polished ?? s.text}
+                                        {s.polishingWarning && <span className="block text-xs text-amber-600 leading-5">Polishing failed; showing the original transcript.</span>}
                                         {s.polished && s.text && <span className="block text-xs text-gray-400 leading-5">Transcript: {s.text}</span>}
                                     </p>
                                 ))}
