@@ -17,7 +17,7 @@ export function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: 
             aria-checked={checked}
             onClick={() => onChange(!checked)}
             className={[
-                'relative inline-flex h-5 w-9 items-center rounded-full transition-colors duration-200 focus:outline-none',
+                'relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors duration-200 focus:outline-none',
                 checked ? 'bg-zoom-blue' : 'bg-gray-300',
             ].join(' ')}
         >
@@ -27,6 +27,23 @@ export function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: 
             ].join(' ')} />
         </button>
     )
+}
+
+// Labeled on/off switch with a one-line hint.
+export function ToggleRow({ label, hint, checked, onChange }: { label: string; hint?: string; checked: boolean; onChange: (v: boolean) => void }) {
+    return (
+        <label className="flex items-start justify-between gap-3 rounded-lg border border-gray-200 px-3 py-2.5">
+            <span>
+                <span className="block text-sm font-medium text-gray-700">{label}</span>
+                {hint && <span className="block text-xs text-gray-500 leading-snug">{hint}</span>}
+            </span>
+            <Toggle checked={checked} onChange={onChange} />
+        </label>
+    )
+}
+
+export function ErrorNote({ children }: { children: React.ReactNode }) {
+    return <p className="text-xs text-red-600 bg-red-50 border border-red-100 rounded-lg py-2 px-3 whitespace-pre-wrap">{children}</p>
 }
 
 export function Field({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {

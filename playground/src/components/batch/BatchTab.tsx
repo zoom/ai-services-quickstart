@@ -2,38 +2,46 @@ import { useState } from 'react'
 import { BatchModeSelector } from './BatchModeSelector'
 import { BatchResultVisual } from './BatchResultVisual'
 import { JobsList } from './JobsList'
-import { buildBatchSubmitPayload } from './formUtils'
+import { availableOutputLayouts, buildBatchSubmitPayload, manifestValidationError } from './formUtils'
 import { useBatchDetailState } from './useBatchDetailState'
 import { CredentialsBox } from '../CredentialsBox'
 import { JsonResult } from '../JsonResult'
 import { CollapsibleCard, Field, SubmitButton } from '../ui'
 import { selectCls, inputCls } from '../../lib/constants'
-import { isFilesResponse } from '../../lib/batchTypes'
+import { isFileResponse, isFilesResponse } from '../../lib/batchTypes'
 import { trpc, type RouterInputs } from '../../lib/trpc'
 import { defaultBatchForm, type BatchFormState, type BatchInputMode, type BatchModeDescription, type BatchOutputLayout } from './formTypes'
 
 export type BatchProduct = 'scribe' | 'summarizer' | 'translator'
-export type BatchConfig<P extends BatchProduct> = Required<NonNullable<RouterInputs[P]['batch']['submit']['config']>>
+export type BatchConfig<P extends BatchProduct> = NonNullable<RouterInputs[P]['batch']['submit']['config']>
 
 // Full batch-jobs tab (submit form, response panel, jobs list) for any product with a batch router.
-export function BatchTab<P extends BatchProduct>({ product, defaultConfig, modeDescriptions, configTitle, renderConfig }: {
+// C is the form's config type, inferred from defaultConfig, so a product can keep a stricter shape than its API input.
+export function BatchTab<P extends BatchProduct, C extends BatchConfig<P>>({ product, defaultConfig, modeDescriptions, configTitle, renderConfig }: {
     product: P
-    defaultConfig: BatchConfig<P>
+    defaultConfig: C
     modeDescriptions: Record<BatchInputMode, BatchModeDescription>
     configTitle: string
-    renderConfig: (config: BatchConfig<P>, onChange: (config: BatchConfig<P>) => void) => React.ReactNode
+    renderConfig: (config: C, onChange: (config: C) => void) => React.ReactNode
 }) {
-    const [form, setForm] = useState<BatchFormState<BatchConfig<P>>>({ ...defaultBatchForm, config: defaultConfig })
+    const [form, setForm] = useState<BatchFormState<C>>({ ...defaultBatchForm, config: defaultConfig })
     const onUpdate = (patch: Partial<typeof form>) => setForm(f => ({ ...f, ...patch }))
     const [filesJobId, setFilesJobId] = useState<string | null>(null)
 
+    const [jobCursors, setJobCursors] = useState<string[]>([])
+    const [jobsPageSize, setJobsPageSize] = useState(25)
+    const outputLayouts = availableOutputLayouts(product, form.inputMode)
+    const manifestError = form.inputMode === 'MANIFEST' ? manifestValidationError(form.manifest) : null
+    const isPresignedOutput = form.outputLayout === 'SINGLE' && form.outputUri.trim().startsWith('https://')
+    const globExamples = product === 'scribe' ? '*.wav, *.mp3' : product === 'translator' ? '*.txt' : '*.txt, *.vtt, *.srt'
     const api = trpc[product].batch
     const utils = trpc.useUtils()
     const batchState = useBatchDetailState(() => { utils[product].batch.list.invalidate() })
-    const jobsQuery = api.list.useQuery({ stateFilter: form.stateFilter || undefined })
+    const jobsQuery = api.list.useQuery({ stateFilter: form.stateFilter || undefined, next_page_token: jobCursors.at(-1), page_size: jobsPageSize })
     const submitMutation = api.submit.useMutation(batchState.submitOptions)
     const statusMutation = api.getStatus.useMutation(batchState.viewOptions)
     const filesMutation = api.getFiles.useMutation(batchState.viewOptions)
+    const fileMutation = api.getFile.useMutation(batchState.viewOptions)
     const loadMoreFilesMutation = api.getFiles.useMutation(batchState.loadMoreOptions)
     const cancelMutation = api.cancel.useMutation(batchState.cancelOptions)
 
@@ -42,6 +50,7 @@ export function BatchTab<P extends BatchProduct>({ product, defaultConfig, modeD
     const detailLoading = submitMutation.isPending
         || statusMutation.isPending
         || filesMutation.isPending
+        || fileMutation.isPending
         || cancelMutation.isPending
 
     const nextCursor = detail && isFilesResponse(detail) ? detail.next_cursor : undefined
@@ -49,7 +58,7 @@ export function BatchTab<P extends BatchProduct>({ product, defaultConfig, modeD
     return (
         <div className="lg:grid lg:grid-cols-[5fr_3fr] gap-5">
             <div className="flex flex-col gap-5 min-w-0">
-                <form id={formId} onSubmit={e => { e.preventDefault(); submitMutation.mutate(
+                <form id={formId} onSubmit={e => { e.preventDefault(); if (manifestError) return; submitMutation.mutate(
                     // TS can't match the payload to a generic product's submit input; config is BatchConfig<P>.
                     buildBatchSubmitPayload(form) as RouterInputs[P]['batch']['submit'],
                 ) }} className="flex flex-col gap-5">
@@ -60,7 +69,8 @@ export function BatchTab<P extends BatchProduct>({ product, defaultConfig, modeD
                                 value={form.inputMode}
                                 descriptions={modeDescriptions}
                                 onChange={v => {
-                                    onUpdate({ inputMode: v, ...(v !== 'PREFIX' && { outputLayout: 'PREFIX' }) })
+                                    const layouts = availableOutputLayouts(product, v)
+                                    onUpdate({ inputMode: v, outputLayout: layouts.includes(form.outputLayout) ? form.outputLayout : layouts[0] })
                                 }}
                             />
 
@@ -78,24 +88,25 @@ export function BatchTab<P extends BatchProduct>({ product, defaultConfig, modeD
 
                             {form.inputMode === 'PREFIX' && (
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                    <Field label="Include Globs" hint="Comma-separated — **/*.wav, **/*.mp3">
-                                        <input className={inputCls + ' font-mono text-xs'} value={form.includeGlobs} onChange={e => onUpdate({ includeGlobs: e.target.value })} placeholder="**/*.wav, **/*.mp3" />
+                                    <Field label="Include Globs" hint={`Comma-separated — ${globExamples}. These patterns include matching files in nested folders.`}>
+                                        <input className={inputCls + ' font-mono text-xs'} value={form.includeGlobs} onChange={e => onUpdate({ includeGlobs: e.target.value })} placeholder={globExamples} />
                                     </Field>
-                                    <Field label="Exclude Globs" hint="Comma-separated — **/tmp/**, *_draft.*">
-                                        <input className={inputCls + ' font-mono text-xs'} value={form.excludeGlobs} onChange={e => onUpdate({ excludeGlobs: e.target.value })} placeholder="**/tmp/**, *_draft.*" />
+                                    <Field label="Exclude Globs" hint="Comma-separated — *_draft.*">
+                                        <input className={inputCls + ' font-mono text-xs'} value={form.excludeGlobs} onChange={e => onUpdate({ excludeGlobs: e.target.value })} placeholder="*_draft.*" />
                                     </Field>
                                 </div>
                             )}
 
                             {form.inputMode === 'MANIFEST' && (
-                                <Field label="Manifest URIs" hint="One URI per line. Lines starting with # are ignored.">
+                                <Field label="Manifest URIs" hint="1–1,000 URIs, one per line. Use all S3 URIs or all HTTPS URLs; submit separate jobs for each type. Lines starting with # are ignored.">
                                     <textarea
                                         className={inputCls + ' min-h-32 resize-y font-mono text-xs leading-relaxed'}
                                         value={form.manifest}
                                         onChange={e => onUpdate({ manifest: e.target.value })}
                                         required
-                                        placeholder={'# Public URLs\nhttps://cdn.example.com/file1\nhttps://cdn.example.com/file2\n\n# Private S3 URIs\ns3://my-bucket/file3'}
+                                        placeholder={'# S3-only job\ns3://my-bucket/file1\ns3://my-bucket/file2\n\n# For an HTTPS-only job, replace all entries with HTTPS URLs.'}
                                     />
+                                    {manifestError && <p role="alert" className="text-xs text-red-600">{manifestError}</p>}
                                 </Field>
                             )}
 
@@ -115,33 +126,24 @@ export function BatchTab<P extends BatchProduct>({ product, defaultConfig, modeD
                         <div className="flex flex-col gap-4">
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                 <Field label="Layout" hint="Where output files will be written">
-                                    {form.inputMode === 'PREFIX' ? (
-                                        <select
-                                            className={selectCls}
-                                            value={form.outputLayout}
-                                            onChange={e => onUpdate({ outputLayout: e.target.value as BatchOutputLayout })}
-                                        >
-                                            <option value="ADJACENT">ADJACENT — next to input file</option>
-                                            <option value="PREFIX">PREFIX — under output URI</option>
-                                        </select>
-                                    ) : (
-                                        <div className={inputCls + ' text-gray-400 select-none'}>PREFIX — under output URI</div>
-                                    )}
+                                    <select className={selectCls} value={form.outputLayout} onChange={e => onUpdate({ outputLayout: e.target.value as BatchOutputLayout })}>
+                                        {outputLayouts.map(layout => <option key={layout} value={layout}>{layout === 'ADJACENT' ? 'ADJACENT — next to input file' : layout === 'SINGLE' ? 'SINGLE — exact output file URI' : 'PREFIX — under output URI'}</option>)}
+                                    </select>
                                 </Field>
-                                {(form.outputLayout === 'PREFIX' || form.inputMode !== 'PREFIX') && (
-                                    <Field label="S3 URI" hint="Bucket URI for output files">
-                                        <input className={inputCls + ' font-mono text-xs'} value={form.outputUri} onChange={e => onUpdate({ outputUri: e.target.value })} placeholder="s3://my-bucket/output/" required />
+                                {form.outputLayout !== 'ADJACENT' && (
+                                    <Field label="Output URI" hint={form.outputLayout === 'SINGLE' ? 'Exact S3 output file URI, or pre-signed HTTPS upload URL' : 'S3 prefix for output files'}>
+                                        <input className={inputCls + ' font-mono text-xs'} value={form.outputUri} onChange={e => onUpdate({ outputUri: e.target.value })} placeholder={form.outputLayout === 'SINGLE' ? 's3://my-bucket/transcript.json' : 's3://my-bucket/output/'} required />
                                     </Field>
                                 )}
                             </div>
-                            <CredentialsBox
+                            {!isPresignedOutput && <CredentialsBox
                                 title="Output AWS Credentials"
                                 fromEnv={form.outputAwsFromEnv}
                                 onFromEnvChange={v => onUpdate({ outputAwsFromEnv: v })}
                                 keyId={form.outputAwsKeyId} onKeyId={v => onUpdate({ outputAwsKeyId: v })}
                                 secret={form.outputAwsSecret} onSecret={v => onUpdate({ outputAwsSecret: v })}
                                 session={form.outputAwsSession} onSession={v => onUpdate({ outputAwsSession: v })}
-                            />
+                            />}
                         </div>
                     </CollapsibleCard>
 
@@ -152,7 +154,7 @@ export function BatchTab<P extends BatchProduct>({ product, defaultConfig, modeD
                     <CollapsibleCard title="Metadata & Notifications" defaultOpen={false}>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             <Field label="Reference ID" hint="Optional tracking ID attached to this job (max 256 chars)">
-                                <input className={inputCls} value={form.referenceId} onChange={e => onUpdate({ referenceId: e.target.value })} placeholder="job-2025-11" />
+                                <input className={inputCls} value={form.referenceId} maxLength={256} onChange={e => onUpdate({ referenceId: e.target.value })} placeholder="job-2025-11" />
                             </Field>
                             <div />
                             <Field label="Webhook URL" hint="Receives POST on every state change">
@@ -167,24 +169,25 @@ export function BatchTab<P extends BatchProduct>({ product, defaultConfig, modeD
             </div>
 
             <div className="flex flex-col gap-5 lg:sticky lg:top-18 min-w-0">
-                <SubmitButton form={formId} busy={submitMutation.isPending} label="Submit Batch Job" busyLabel="Submitting…" />
+                <SubmitButton form={formId} busy={submitMutation.isPending} disabled={!!manifestError} label="Submit Batch Job" busyLabel="Submitting…" />
 
                 <JsonResult
                     data={detail}
                     loading={detailLoading}
                     className="max-h-96"
-                    visual={detail ? <BatchResultVisual data={detail} /> : undefined}
-                    footer={!detailLoading && filesJobId && nextCursor && (
+                    visual={detail ? <BatchResultVisual data={detail} onFileDetail={filesJobId ? fileId => fileMutation.mutate({ jobId: filesJobId, fileId }) : undefined} /> : undefined}
+                    footer={!detailLoading && filesJobId && (nextCursor || (detail && isFileResponse(detail))) && (
                         <div className="px-4 py-2.5 border-t border-gray-200 bg-gray-50 shrink-0">
                             {moreFilesError && <p role="alert" className="text-xs text-red-600 mb-2">{moreFilesError}</p>}
-                            <button
+                            {detail && isFileResponse(detail) && <button type="button" onClick={() => filesMutation.mutate({ jobId: filesJobId })} className="text-xs text-zoom-blue">← Back to files</button>}
+                            {nextCursor && <button
                                 type="button"
                                 onClick={() => loadMoreFilesMutation.mutate({ jobId: filesJobId, next_page_token: nextCursor })}
                                 disabled={loadMoreFilesMutation.isPending}
                                 className="flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg bg-white border border-gray-200 text-gray-500 hover:text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50"
                             >
                                 {loadMoreFilesMutation.isPending ? '… Loading…' : '↓ Load more files'}
-                            </button>
+                            </button>}
                         </div>
                     )}
                 />
@@ -193,7 +196,15 @@ export function BatchTab<P extends BatchProduct>({ product, defaultConfig, modeD
                     jobs={jobsQuery.data?.jobs ?? []}
                     loadingJobs={jobsQuery.isFetching}
                     stateFilter={form.stateFilter}
-                    onStateFilterChange={v => onUpdate({ stateFilter: v })}
+                    error={jobsQuery.error?.message}
+                    hasPrevious={jobCursors.length > 0}
+                    hasNext={!!jobsQuery.data?.next_cursor}
+                    page={jobCursors.length + 1}
+                    pageSize={jobsPageSize}
+                    onPageSizeChange={size => { setJobsPageSize(size); setJobCursors([]) }}
+                    onPrevious={() => setJobCursors(cursors => cursors.slice(0, -1))}
+                    onNext={() => { const cursor = jobsQuery.data?.next_cursor; if (cursor) setJobCursors(cursors => [...cursors, cursor]) }}
+                    onStateFilterChange={v => { onUpdate({ stateFilter: v }); setJobCursors([]) }}
                     onRefresh={() => jobsQuery.refetch()}
                     onAction={(action, jobId) => {
                         if (action === 'files') {

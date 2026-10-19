@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { parseApiResponse } from '../responses.ts'
 import { router, procedure } from '../trpc.ts'
 import { createApiRequest } from '../util.ts'
 import { makeBatchRouter } from './shared.ts'
@@ -25,10 +26,11 @@ const summarizeResponseSchema = z.object({
         recap: z.string().optional(),
         summary_text: z.string().optional(),
         action_items: z.string().optional(),
+        full_summary: z.string().optional(),
     }).optional(),
     model: z.string().optional(),
     usage: z.unknown().optional(),
-}).catchall(z.unknown())
+})
 
 export const summarizerRouter = router({
     summarize: procedure
@@ -43,7 +45,7 @@ export const summarizerRouter = router({
         }))
         .mutation(async ({ input }) => {
             const data = await makeSummarizerRequest('/summarize', { json: input })
-            return summarizeResponseSchema.parse(data)
+            return parseApiResponse(summarizeResponseSchema, data)
         }),
 
     batch: makeBatchRouter(makeSummarizerRequest, summarizerFastConfigSchema),

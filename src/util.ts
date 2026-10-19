@@ -1,5 +1,6 @@
 import { KJUR } from 'jsrsasign'
 import dotenv from 'dotenv'
+import { apiResponseBodyError, apiResponseError, asTrpcError } from './apiErrors.ts'
 dotenv.config()
 
 export type AwsCredentials = {
@@ -41,22 +42,33 @@ export function withAwsAuth<T extends { auth?: { aws?: AwsCredentials } }>(value
     return { ...value, auth: { ...(value.auth ?? {}), aws } }
 }
 
-// Requests to one AI service, e.g. createApiRequest('scribe'). Pass `json` to POST a JSON body.
+// Authenticated request to an AI Services path, e.g. zoomFetch('/scribe/transcribe'). Returns the raw
+// Response, for callers that stream it; most code uses createApiRequest instead.
+export function zoomFetch(path: string, init: RequestInit = {}) {
+    return fetch(`${ZOOM_API_BASE_URL}/aiservices${path}`, {
+        ...init,
+        headers: { Authorization: `Bearer ${generateJWT()}`, ...init.headers },
+    })
+}
+
+// JSON requests to one AI service, e.g. createApiRequest('scribe'). Pass `json` to POST a JSON body,
+// or `body` (e.g. FormData) with `method: 'POST'` for anything else.
 export function createApiRequest(service: string) {
-    const basePath = `${ZOOM_API_BASE_URL}/aiservices/${service}`
     return async function makeRequest(path: string, { json, ...init }: RequestInit & { json?: unknown } = {}) {
-        const res = await fetch(`${basePath}${path}`, {
+        const res = await zoomFetch(`/${service}${path}`, {
             ...init,
             ...(json !== undefined && { method: 'POST', body: JSON.stringify(json) }),
             headers: {
-                Authorization: `Bearer ${generateJWT()}`,
                 ...(json !== undefined && { 'Content-Type': 'application/json' }),
                 ...init.headers,
             },
         })
-        if (!res.ok) throw new Error(await res.text() || res.statusText)
+        if (!res.ok) throw asTrpcError(await apiResponseError(res, service))
         if (res.status === 204) return null
-        return res.json()
+        const data: unknown = await res.json()
+        const error = apiResponseBodyError(res, data, service)
+        if (error) throw asTrpcError(error)
+        return data
     }
 }
 

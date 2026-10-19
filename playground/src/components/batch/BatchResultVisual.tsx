@@ -1,35 +1,42 @@
+import { useState } from 'react'
 import { KV } from './KV'
 import {
     type BatchApiResponse,
     type CancelResponse,
     isErrorResponse,
     isFilesResponse,
+    isFileResponse,
     isJobResponse,
 } from '../../lib/batchTypes'
 import { StateBadge } from './StateBadge'
 
-export function BatchResultVisual({ data }: { data: BatchApiResponse }) {
-    if (isErrorResponse(data)) {
-        const err = data.error
-        const errStr = typeof err === 'string' ? err : (err.message ?? JSON.stringify(err))
-        const code = typeof err === 'object' ? err.code : undefined
-        return (
-            <div className="rounded-lg bg-red-50 border border-red-200 p-4 flex flex-col gap-2">
-                <div className="flex items-center gap-2">
-                    <span className="text-xs font-semibold text-red-600 uppercase tracking-wider">Error</span>
-                    {code && <span className="text-[10px] font-mono text-red-500 bg-red-100 px-1.5 py-0.5 rounded">{code}</span>}
-                </div>
-                <span className="text-xs text-red-700 font-mono break-all">{errStr}</span>
-            </div>
-        )
-    }
+function ApiError({ error }: { error: string | { code?: string; message?: string } }) {
+    const message = typeof error === 'string' ? error : (error.message ?? JSON.stringify(error))
+    return <div role="alert" className="rounded-lg bg-red-50 border border-red-200 p-3 text-xs text-red-700 break-words">{typeof error === 'object' && error.code && <strong>{error.code}: </strong>}{message}</div>
+}
 
-    if (isFilesResponse(data)) {
-        const { files } = data
+function OutputUri({ uri }: { uri?: string | null }) {
+    const [copyStatus, setCopyStatus] = useState('')
+    if (!uri) return <span className="text-gray-400">Not available yet</span>
+    return <div className="flex flex-col gap-1 min-w-40">
+        <input aria-label="Output URI" className="font-mono text-[10px] w-full bg-transparent text-gray-600" value={uri} readOnly onFocus={e => e.currentTarget.select()} title={uri} />
+        <button type="button" className="text-left text-[10px] text-zoom-blue" onClick={async () => {
+            try { await navigator.clipboard.writeText(uri); setCopyStatus('Copied') }
+            catch { setCopyStatus('Select the URI above to copy') }
+        }}>{copyStatus || 'Copy URI'}</button>
+    </div>
+}
+
+export function BatchResultVisual({ data, onFileDetail }: { data: BatchApiResponse; onFileDetail?: (fileId: string) => void }) {
+    if (isErrorResponse(data) && !isJobResponse(data) && !isFileResponse(data)) return <ApiError error={data.error} />
+
+    if (isFilesResponse(data) || isFileResponse(data)) {
+        const singleFile = isFileResponse(data)
+        const files = singleFile ? [data] : data.files
         return (
             <div className="flex flex-col gap-3">
                 <div className="flex items-center justify-between">
-                    <span className="text-xs font-semibold text-gray-500">Files</span>
+                    <span className="text-xs font-semibold text-gray-500">{singleFile ? 'File details' : 'Files'}</span>
                     <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">{files.length}</span>
                 </div>
                 {files.length === 0 ? (
@@ -39,7 +46,7 @@ export function BatchResultVisual({ data }: { data: BatchApiResponse }) {
                         <table className="w-full text-xs border-collapse">
                             <thead>
                                 <tr className="border-b border-gray-200">
-                                    {['File', 'State', 'Duration'].map(h => (
+                                    {['File', 'State', 'Duration', 'Output'].map(h => (
                                         <th key={h} className="text-left text-[10px] font-semibold text-gray-500 uppercase tracking-wider py-2 px-2">{h}</th>
                                     ))}
                                 </tr>
@@ -54,10 +61,13 @@ export function BatchResultVisual({ data }: { data: BatchApiResponse }) {
                                         <tr key={f.file_id} className="hover:bg-gray-50 align-top">
                                             <td className="py-2 px-2 max-w-[200px]">
                                                 <span className="font-mono text-gray-700 block truncate" title={f.input_uri}>{filename}</span>
+                                                {singleFile && <span className="block text-[10px] text-gray-500 break-all">{f.file_id}</span>}
+                                                {!singleFile && onFileDetail && <button type="button" onClick={() => onFileDetail(f.file_id)} className="block text-[10px] text-zoom-blue mt-1">View details</button>}
                                                 {errMsg && <p className="text-[10px] text-red-500 mt-0.5 leading-snug truncate" title={errMsg}>{errMsg}</p>}
                                             </td>
                                             <td className="py-2 px-2 whitespace-nowrap"><StateBadge state={f.state} /></td>
-                                            <td className="py-2 px-2 text-gray-500 whitespace-nowrap">{f.duration_sec ? `${f.duration_sec}s` : '—'}</td>
+                                            <td className="py-2 px-2 text-gray-500 whitespace-nowrap">{f.duration_sec != null ? `${f.duration_sec}s` : '—'}</td>
+                                            <td className="py-2 px-2"><OutputUri uri={f.output_uri} /></td>
                                         </tr>
                                     )
                                 })}
@@ -80,6 +90,7 @@ export function BatchResultVisual({ data }: { data: BatchApiResponse }) {
                     {submitted_at && <KV label="Submitted" value={new Date(submitted_at).toLocaleString()} />}
                     {completed_at && <KV label="Completed" value={new Date(completed_at).toLocaleString()} />}
                 </div>
+                {data.error && <ApiError error={data.error} />}
                 {input && (
                     <div className="rounded-lg bg-gray-50 border border-gray-200 p-3 flex flex-col gap-2">
                         <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider">Input</p>

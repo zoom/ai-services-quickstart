@@ -1,11 +1,14 @@
 import { useEffect, useRef, useState } from 'react'
-import { Card, SectionHeading, Field } from '../../../components/ui'
-import { inputCls } from '../../../lib/constants'
+import { Card, SectionHeading, ToggleRow } from '../../../components/ui'
+import { EventLog } from '../../../components/EventLog'
+import { AsrConfigForm } from '../components/AsrConfig'
+import { defaultAsrConfig, type AsrConfig } from '../lib/constants'
 import { useScribeLive, type ScribeStatus } from '../lib/useScribeLive'
 
 const STATUS_LABEL: Record<ScribeStatus, string> = {
     idle: 'Ready',
     connecting: 'Connecting',
+    configuration_error: 'Update configuration',
     recording: 'Listening',
     stopping: 'Wrapping up',
     error: 'Error',
@@ -37,11 +40,13 @@ function Waveform({ live }: { live: boolean }) {
 }
 
 export function LiveTab() {
-    const [language, setLanguage] = useState('en-US')
-    const { status, segments, interim, error, latencyMs, events, start, stop, clear } = useScribeLive()
+    const [config, setConfig] = useState<AsrConfig>(defaultAsrConfig)
+    const [captions, setCaptions] = useState(true)
+    const { status, segments, interim, error, latencyMs, events, start, stop, clear, retryConfig } = useScribeLive()
 
     const live = status === 'recording'
-    const connecting = status === 'connecting'
+    const recoverable = status === 'configuration_error'
+    const connecting = status === 'connecting' || recoverable
     const active = live || connecting || status === 'stopping'
 
     const transcriptRef = useRef<HTMLDivElement>(null)
@@ -54,7 +59,7 @@ export function LiveTab() {
     const dot = status === 'error' ? 'bg-red-500' : live ? 'bg-zoom-blue' : connecting || status === 'stopping' ? 'bg-amber-400' : 'bg-gray-300'
 
     return (
-        <div className="lg:grid lg:grid-cols-[3fr_2fr] lg:items-start gap-5">
+        <div className="lg:grid lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] lg:items-start gap-5">
             <div className="flex flex-col gap-5">
                 {/* Stage: the live-audio centerpiece */}
                 <Card className="relative overflow-hidden">
@@ -86,7 +91,7 @@ export function LiveTab() {
                     <div className="relative flex items-center justify-center gap-4">
                         <button
                             type="button"
-                            onClick={live || connecting ? stop : () => start(language)}
+                            onClick={live || connecting ? stop : () => start(config, captions)}
                             disabled={status === 'stopping'}
                             aria-label={live || connecting ? 'Stop transcription' : 'Start transcription'}
                             className={[
@@ -112,7 +117,7 @@ export function LiveTab() {
                     </div>
 
                     <p className="relative mt-4 text-center text-xs text-gray-400">
-                        {connecting ? 'Opening the stream to Zoom Scribe…'
+                        {recoverable ? 'Edit the settings below, then retry configuration. Microphone audio is paused.' : connecting ? 'Waiting for Zoom Scribe to accept the configuration…'
                             : status === 'stopping' ? 'Flushing the final transcript…'
                                 : live ? 'Speak — completed segments appear as they arrive.'
                                     : 'Tap the mic to stream your microphone in real time.'}
@@ -124,12 +129,8 @@ export function LiveTab() {
                 </Card>
 
                 <Card>
-                    <div className="flex items-end justify-between gap-4">
-                        <div className="flex-1 max-w-xs">
-                            <Field label="Language" hint="BCP-47 — en-US, es-ES, fr-FR, ja-JP…">
-                                <input className={inputCls} value={language} disabled={active} onChange={e => setLanguage(e.target.value)} placeholder="en-US" />
-                            </Field>
-                        </div>
+                    <div className="flex items-center justify-between gap-4 mb-4">
+                        <SectionHeading title="Session Config" />
                         <button
                             type="button"
                             onClick={clear}
@@ -139,6 +140,11 @@ export function LiveTab() {
                             Clear
                         </button>
                     </div>
+                    <fieldset disabled={active && !recoverable} className="flex flex-col gap-3 disabled:opacity-60">
+                        <ToggleRow label="Captions" hint="Show partial results before each segment completes" checked={captions} onChange={setCaptions} />
+                        <AsrConfigForm value={config} onChange={setConfig} live />
+                        {recoverable && <button type="button" onClick={() => retryConfig(config, captions)} className="px-4 py-2 text-sm font-semibold rounded-lg bg-zoom-blue text-white">Retry configuration</button>}
+                    </fieldset>
                 </Card>
 
                 {/* Transcript: editorial, auto-scrolling */}
@@ -151,14 +157,21 @@ export function LiveTab() {
                         {segments.length === 0 && !interim ? (
                             <span className="text-gray-300 select-none italic">Completed segments will appear here as you speak…</span>
                         ) : (
-                            <p className="[text-wrap:pretty]">
+                            <div className="flex flex-col gap-2 [text-wrap:pretty]">
                                 {segments.map((s, i) => (
-                                    <span key={i} style={{ animation: 'riseIn .35s ease both' }}>{s} </span>
+                                    <p key={i} style={{ animation: 'riseIn .35s ease both' }}>
+                                        {(s.speaker || s.language) && (
+                                            <span className="mr-2 text-xs font-semibold text-zoom-blue">{[s.speaker, s.language].filter(Boolean).join(' · ')}</span>
+                                        )}
+                                        {s.polished ?? s.text}
+                                        {s.polishingWarning && <span className="block text-xs text-amber-600 leading-5">Polishing failed; showing the original transcript.</span>}
+                                        {s.polished && s.text && <span className="block text-xs text-gray-400 leading-5">Transcript: {s.text}</span>}
+                                    </p>
                                 ))}
                                 {interim && (
-                                    <span className="text-zoom-blue/70" style={{ animation: 'breathe 1.6s ease-in-out infinite' }}>{interim}</span>
+                                    <p className="text-zoom-blue/70" style={{ animation: 'breathe 1.6s ease-in-out infinite' }}>{interim}</p>
                                 )}
-                            </p>
+                            </div>
                         )}
                     </div>
                     {segments.length > 0 && (
@@ -169,32 +182,7 @@ export function LiveTab() {
                 </Card>
             </div>
 
-            {/* Raw event stream */}
-            <div className="lg:sticky lg:top-20">
-                {/* Bound the whole panel to the space under the sticky offset so it never runs
-                    off-screen; only the list scrolls, the header stays pinned. */}
-                <div className="rounded-xl border border-gray-200 bg-white overflow-hidden flex flex-col max-h-[calc(100dvh-7rem)]">
-                    <div className="shrink-0 flex items-center justify-between gap-2 px-4 py-3 border-b border-gray-200 bg-zoom-panel">
-                        <span className="text-xs font-semibold text-gray-500 tracking-wide">Scribe events</span>
-                        {events.length > 0 && <span className="text-[11px] text-gray-400 tabular-nums">{events.length}</span>}
-                    </div>
-                    <div className="flex-1 min-h-44 overflow-y-auto p-3 bg-zoom-surface flex flex-col gap-2">
-                        {events.length === 0 ? (
-                            <span className="text-xs text-gray-300 select-none p-1">Raw Scribe events stream in here…</span>
-                        ) : (
-                            events.map(ev => (
-                                <div key={ev.id} className="shrink-0 rounded-lg border border-gray-200/70 bg-white overflow-hidden" style={{ animation: 'riseIn .25s ease both' }}>
-                                    <div className="flex items-center gap-2 px-3 py-1.5 border-b border-gray-100">
-                                        <span className="text-[10px] font-mono text-gray-400 tabular-nums shrink-0">{ev.time}</span>
-                                        {ev.type && <span className="text-[10px] font-semibold text-zoom-blue font-mono truncate">{ev.type}</span>}
-                                    </div>
-                                    <pre className="px-3 py-2 text-[11px] leading-relaxed font-mono whitespace-pre-wrap wrap-break-word text-gray-600 max-h-40 overflow-auto">{ev.body}</pre>
-                                </div>
-                            ))
-                        )}
-                    </div>
-                </div>
-            </div>
+            <EventLog title="Scribe events" events={events} empty="Raw Scribe events stream in here…" />
         </div>
     )
 }

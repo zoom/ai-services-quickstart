@@ -18,7 +18,8 @@ export function JsonResult({ data, loading, visual, footer, className = 'h-full'
     const ready = !loading && !isEmpty
     const visualShown = ready && showVisual && visual !== undefined
 
-    const json = isEmpty ? '' : JSON.stringify(data, null, 2)
+    const raw = data && typeof data === 'object' && 'raw_response' in data ? data.raw_response : data
+    const json = isEmpty ? '' : JSON.stringify(raw, null, 2)
     const colorized = colorizeJson(json)
 
     return (

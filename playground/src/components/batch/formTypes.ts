@@ -1,5 +1,5 @@
 export type BatchInputMode = 'SINGLE' | 'PREFIX' | 'MANIFEST'
-export type BatchOutputLayout = 'ADJACENT' | 'PREFIX'
+export type BatchOutputLayout = 'ADJACENT' | 'PREFIX' | 'SINGLE'
 
 export type BatchModeDescription = {
     title: string
