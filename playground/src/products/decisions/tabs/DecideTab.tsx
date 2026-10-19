@@ -4,6 +4,7 @@ import { JsonResult } from '../../../components/JsonResult'
 import { inputCls, selectCls } from '../../../lib/constants'
 import { readFileAsDataUri } from '../../../lib/utils'
 import { trpc, type RouterInputs } from '../../../lib/trpc'
+import { choiceValueKey } from '../../../../../src/decisions/schema'
 
 type Questions = RouterInputs['decisions']['decide']['questions']
 type QuestionType = 'predicate' | 'choice' | 'score'
@@ -83,19 +84,22 @@ const TEMPLATES: Array<{ label: string; input: string; questions: () => Draft[] 
 const clean = (s: string) => s.trim() || undefined
 
 function toQuestions(drafts: Draft[]): Questions {
-    return drafts.map(d => ({
-        type: d.type,
-        name: clean(d.name),
-        instructions: d.instructions.trim(),
-        ...(d.type === 'choice' && {
+    return drafts.map(d => {
+        const common = { name: d.name.trim(), instructions: d.instructions.trim() }
+        if (d.type === 'choice') return {
+            ...common,
+            type: 'choice',
             choices: d.booleanChoices
                 ? d.choices.slice(0, 2).map((c, i) => ({ value: i === 0, description: clean(c.description) }))
-                : d.choices.filter(c => c.value.trim()).map(c => ({ value: c.value.trim(), description: clean(c.description) })),
-        }),
-        ...(d.type === 'score' && {
-            levels: d.levels.filter(l => l.label.trim()).map(l => ({ label: l.label.trim(), description: clean(l.description) })),
-        }),
-    }))
+                : d.choices.map(c => ({ value: c.value.trim(), description: clean(c.description) })),
+        }
+        if (d.type === 'score') return {
+            ...common,
+            type: 'score',
+            levels: d.levels.map(l => ({ label: l.label.trim(), description: clean(l.description) })),
+        }
+        return { ...common, type: 'predicate' }
+    })
 }
 
 // Returns a message per invalid question (keyed by draft id).
@@ -104,11 +108,14 @@ function validate(drafts: Draft[]): Record<number, string> {
     const names = drafts.map(d => d.name.trim()).filter(Boolean)
     for (const d of drafts) {
         const values = d.choices.map(c => c.value.trim()).filter(Boolean)
-        if (!d.instructions.trim()) issues[d.id] = 'Add instructions describing what to evaluate.'
-        else if (d.name.trim() && names.filter(n => n === d.name.trim()).length > 1) issues[d.id] = 'Names must be unique.'
+        if (!d.name.trim()) issues[d.id] = 'Add a name for this question.'
+        else if (!d.instructions.trim()) issues[d.id] = 'Add instructions describing what to evaluate.'
+        else if (names.filter(n => n === d.name.trim()).length > 1) issues[d.id] = 'Names must be unique.'
         else if (d.type === 'choice' && !d.booleanChoices && values.length < 2) issues[d.id] = 'Add at least two choices.'
+        else if (d.type === 'choice' && !d.booleanChoices && d.choices.some(c => !c.value.trim())) issues[d.id] = 'Every choice needs a value.'
         else if (d.type === 'choice' && !d.booleanChoices && new Set(values).size !== values.length) issues[d.id] = 'Choice values must be unique.'
         else if (d.type === 'score' && d.levels.filter(l => l.label.trim()).length < 2) issues[d.id] = 'Add at least two levels.'
+        else if (d.type === 'score' && d.levels.some(l => !l.label.trim())) issues[d.id] = 'Every level needs a label.'
     }
     return issues
 }
@@ -130,7 +137,7 @@ function RowList<T>({ items, onChange, render, make, addLabel, ordered, min }: {
     const update = (i: number, patch: Partial<T>) => onChange(items.map((it, j) => (j === i ? { ...it, ...patch } : it)))
     const move = (i: number, by: number) => {
         const next = [...items]
-        ;[next[i], next[i + by]] = [next[i + by], next[i]]
+            ;[next[i], next[i + by]] = [next[i + by], next[i]]
         onChange(next)
     }
     return (
@@ -194,7 +201,7 @@ function QuestionCard({ draft, index, issue, onChange, onRemove, onDuplicate, ca
 
             <div className="p-4 flex flex-col gap-3">
                 <div className="grid grid-cols-1 sm:grid-cols-[1fr_2.2fr] gap-3">
-                    <input className={inputCls + ' font-mono text-xs'} value={draft.name} onChange={e => onChange({ name: e.target.value })} placeholder="name (optional)" aria-label="Question name" />
+                    <input className={inputCls + ' font-mono text-xs'} value={draft.name} onChange={e => onChange({ name: e.target.value })} placeholder="name (required)" aria-label="Question name" required />
                     <input className={inputCls} value={draft.instructions} onChange={e => onChange({ instructions: e.target.value })} placeholder={draft.type === 'predicate' ? 'Does this request require escalation?' : draft.type === 'choice' ? 'Which team should handle this?' : 'How severe is this issue?'} aria-label="Instructions" />
                 </div>
 
@@ -318,7 +325,7 @@ function ScoreAnswer({ answer, levelLabel }: { answer: Answer; levelLabel: (i: n
 // `question` is the question as sent, so level labels match the response even if the form changed since.
 function AnswerCard({ answer, question }: { answer: Answer; question?: Question }) {
     const meta = TYPE_META[answer.type as QuestionType] as (typeof TYPE_META)[QuestionType] | undefined
-    const levelLabel = (i: number) => question?.levels?.[i]?.label ?? `Level ${i}`
+    const levelLabel = (i: number) => (question?.type === 'score' ? question.levels[i]?.label : undefined) ?? `Level ${i}`
 
     return (
         <div className="rounded-xl border border-gray-200 bg-white px-4 py-3.5" style={{ animation: 'riseIn .3s ease both' }}>
@@ -342,7 +349,7 @@ function AnswerCard({ answer, question }: { answer: Answer; question?: Question 
             {answer.type === 'choice' && (
                 <>
                     <p className="text-lg font-semibold text-gray-900 mb-2 font-mono">{String(answer.choice)}</p>
-                    <Bars tone="bg-zoom-blue" winner={String(answer.choice)} rows={(answer.probabilities ?? []).map(p => ({ label: String(p.value), p: p.probability }))} />
+                    <Bars tone="bg-zoom-blue" winner={choiceValueKey(answer.choice)} rows={(answer.probabilities ?? []).map(p => ({ label: choiceValueKey(p.value) ?? String(p.value), p: p.probability }))} />
                 </>
             )}
 

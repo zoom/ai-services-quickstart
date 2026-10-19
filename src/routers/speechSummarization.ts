@@ -12,9 +12,10 @@ export async function speechSummarizationHandler(req: Request, res: Response) {
         res.status(400).json({ error: 'A file is required' })
         return
     }
+    // Send `config` before `file`: the API reads the parts in order.
     const form = new FormData()
-    form.append('file', new Blob([req.file.buffer], { type: req.file.mimetype }), req.file.originalname)
     if (typeof req.body.config === 'string') form.append('config', req.body.config)
+    form.append('file', new Blob([req.file.buffer], { type: req.file.mimetype }), req.file.originalname)
 
     const upstream = await zoomFetch('/speech-summarization/summarize', {
         method: 'POST',

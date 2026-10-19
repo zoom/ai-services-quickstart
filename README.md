@@ -19,7 +19,7 @@ A Node.js/Express + React playground for the [Zoom AI Services APIs](https://dev
 | **Translator** | Batch | Translate `.txt` files stored in S3 |
 | **Summarizer** | Fast  | Summarize a transcript (up to 96 KB) — recap, action items, summary, or full summary |
 | **Summarizer** | Batch | Summarize transcripts stored in S3 |
-| **Speech Summarization** | Summarize | Upload a recording and stream its transcript and Markdown summary — automatic, predefined, or custom template, citations, sentiment removal, diarization, and profanity filter |
+| **Speech Summarization** | Summarize | Upload a recording (up to 50 MB / 2 hours) and stream its transcript and Markdown summary — automatic, predefined, or custom template, speaker/timestamp citations, sentiment removal, diarization, and profanity filter |
 | **Voice Agent** | Live | Talk to a voice agent through your microphone — ten voices, barge-in, context phrases, reasoning effort, and function calling (a `get_current_time` demo tool) |
 | **Clinical Notes** | Generate / Jobs | Generate a SOAP, General Medicine, or General Behavioral Health note from an upload or recording URL, synchronously or as a job |
 | **Decisions** | Decide | Evaluate predicate, choice, and score questions against shared text and an optional image, with Standard or Pro models |
@@ -63,16 +63,15 @@ Edit `.env`:
 | `ZOOM_API_SECRET` | **Yes** | Zoom Build Platform API secret |
 | `PORT` | No | Server port (default: `4000`) |
 
-For **batch jobs** also set:
+For **batch jobs**, you can supply AWS credentials in the UI or set these server-side defaults:
 
 | Variable | Description |
 |---|---|
 | `AWS_ACCESS_KEY_ID` | IAM access key — forwarded to Zoom to read/write your S3 bucket |
 | `AWS_SECRET_ACCESS_KEY` | IAM secret key |
 | `AWS_SESSION_TOKEN` | Session token (if using temporary credentials) |
-| `WEBHOOK_SECRET` | HMAC secret to verify incoming webhook payloads |
 
-Use `scripts/generate-sts-creds.sh` to generate temporary STS credentials:
+Use `scripts/generate-sts-creds.sh` to generate temporary STS credentials and write them to `.env` (requires the AWS CLI and Python 3; defaults to a one-hour session):
 ```bash
 ./scripts/generate-sts-creds.sh <AWS_ACCESS_KEY_ID> <AWS_SECRET_ACCESS_KEY>
 ```
@@ -88,6 +87,20 @@ cd playground && npm install && npm run dev
 ```
 
 Open `http://localhost:5173`.
+
+The Vite development proxy targets port `4000`. If you change the backend `PORT`, also update the `/trpc`, `/api`, and `/live` targets in `playground/vite.config.ts`. Restart the API server after changing `.env`.
+
+To build and run both parts on one origin without Docker, run these commands from the repository root:
+
+```bash
+npm ci
+npm ci --prefix playground
+npm run build
+npm run build --prefix playground
+npm run start:compiled
+```
+
+Open `http://localhost:4000` (or your configured `PORT`). Run the server from the repository root so it can find `playground/dist`. `npm start` builds the backend only; the single-origin UI requires a separate playground build.
 
 ## Docker
 
@@ -108,7 +121,7 @@ The server receives Zoom batch job notifications at `POST /webhooks/<product>` �
 cloudflared tunnel --url http://localhost:4000
 ```
 
-Paste the printed URL into the **Webhook URL** field when submitting a batch job in the playground. Set `WEBHOOK_SECRET` in `.env` to the same value you submit alongside it — the server uses it to verify the `x-zm-signature` header on incoming callbacks.
+Append the product's webhook path to the printed tunnel URL before entering it in the **Webhook URL** field, for example `https://your-tunnel.example/webhooks/scribe`. Use `/webhooks/translator` or `/webhooks/summarizer` for those products. On a deployed service, use its public HTTPS origin with the same path; no tunnel is needed. Set `WEBHOOK_SECRET` in `.env` (or the host's environment) to the same secret submitted with the job — the server uses it to verify the `x-zm-signature` and `x-zm-request-timestamp` headers. Received notifications are logged; use Refresh/Status in the UI to retrieve job updates.
 
 ## Resources
 
