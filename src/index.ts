@@ -7,6 +7,7 @@ import { createExpressMiddleware } from '@trpc/server/adapters/express'
 import { attachLiveRelays } from './live/relay.ts'
 import { speechSummarizationHandler, speechSummarizationUpload } from './routers/speechSummarization.ts'
 import { appRouter } from './routers/index.ts'
+import { ttsHandler, ttsJson } from './routers/tts.ts'
 
 const app = express()
 const port = process.env.PORT || 4000
@@ -16,6 +17,8 @@ app.options('*', cors())
 
 // Webhook registered before express.json() — raw body needed for HMAC verification
 app.post('/webhooks/:product', express.raw({ type: 'application/json' }), handleWebhook)
+
+app.post('/api/tts', ttsJson, ttsHandler)
 
 // Increase limit for base64-encoded audio files sent via tRPC
 app.use(express.json({ limit: '150mb' }))

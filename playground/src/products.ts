@@ -9,6 +9,7 @@ import { BatchTab as TranslatorBatchTab } from './products/translator/tabs/Batch
 import { LiveTab as VoiceAgentLiveTab } from './products/voice-agent/tabs/LiveTab'
 import { SummarizeTab as SpeechSummarizationTab } from './products/speech-summarization/tabs/SummarizeTab'
 import { DecideTab as DecisionsTab } from './products/decisions/tabs/DecideTab'
+import { FastTab as TtsFastTab } from './products/tts/tabs/FastTab'
 
 export type ProductTab = {
     id: string
@@ -42,6 +43,14 @@ export const PRODUCTS: Product[] = [
         tabs: [
             { id: 'fast', label: 'Fast', hint: 'Translate text instantly - up to 4,000 characters', component: TranslatorFastTab },
             { id: 'batch', label: 'Batch', hint: 'Translate txt files via S3', component: TranslatorBatchTab },
+        ],
+    },
+    {
+        id: 'tts',
+        label: 'TTS',
+        defaultTab: 'fast',
+        tabs: [
+            { id: 'fast', label: 'Fast', hint: 'Turn text into streamed speech', component: TtsFastTab },
         ],
     },
     {
