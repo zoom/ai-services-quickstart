@@ -8,6 +8,7 @@ const WSS_ROOT = ZOOM_API_BASE_URL.replace(/^https/, 'wss')
 // because browsers can't set the Authorization header on a WebSocket.
 const ROUTES: Record<string, { endpoint: string; protocol: string }> = {
     '/live/scribe': { endpoint: `${WSS_ROOT}/aiservices/scribe/live`, protocol: 'live-asr' },
+    '/live/interpreter': { endpoint: `${WSS_ROOT}/ws/aiservices/interpreter/live`, protocol: 'interpreter.zoom.v1' },
     // Voice Agent is served under the /ws root path.
     '/live/voice-agent': { endpoint: `${WSS_ROOT}/ws/aiservices/voice-agent/live`, protocol: 'voice-agent.zoom.v2' },
 }

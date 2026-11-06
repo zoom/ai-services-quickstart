@@ -12,10 +12,12 @@ export class UpstreamApiError extends Error {
         const code = typeof upstreamCode === 'string' || typeof upstreamCode === 'number' ? ` (code ${upstreamCode})` : ''
         const reason = nested.message ?? details.message ?? details.error ?? body
         const message = typeof reason === 'string' ? reason : JSON.stringify(reason)
+        const availability = status === 404 && context === 'clinical_notes'
+            ? 'Clinical Notes route returned 404. Check the deployment route and account access. ' : ''
         const resolvedRequestId = requestId ?? (typeof details.request_id === 'string' ? details.request_id : null)
         const trace = resolvedRequestId ? ` (request ${resolvedRequestId})` : ''
         const retry = retryAfter ? ` Retry-After: ${retryAfter}.` : ''
-        super(`Upstream HTTP ${status}${code}: ${message || 'Request failed'}${trace}${retry}`)
+        super(`${availability}Upstream HTTP ${status}${code}: ${message || 'Request failed'}${trace}${retry}`)
         this.name = 'UpstreamApiError'
         this.status = status
         this.body = body
