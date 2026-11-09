@@ -15,7 +15,7 @@ export class UpstreamApiError extends Error {
         const resolvedRequestId = requestId ?? (typeof details.request_id === 'string' ? details.request_id : null)
         const trace = resolvedRequestId ? ` (request ${resolvedRequestId})` : ''
         const retry = retryAfter ? ` Retry-After: ${retryAfter}.` : ''
-        super(`Upstream HTTP ${status}${code}: ${message || 'Request failed'}${trace}${retry}`)
+        super(`${context ? `${context}: ` : ''}Upstream HTTP ${status}${code}: ${message || 'Request failed'}${trace}${retry}`)
         this.name = 'UpstreamApiError'
         this.status = status
         this.body = body

@@ -1,6 +1,6 @@
 # Zoom AI Services Quickstart
 
-A Node.js/Express + React playground for the [Zoom AI Services APIs](https://developers.zoom.us/docs/ai-services/). Test **Scribe** (speech-to-text), **Translator**, **Summarizer**, **Speech Summarization**, **Voice Agent**, and **Decisions** through a web UI backed by a tRPC server that handles JWT authentication and all API communication.
+A Node.js/Express + React playground for the [Zoom AI Services APIs](https://developers.zoom.us/docs/ai-services/). Test **Scribe** (speech-to-text), **Translator**, **TTS**, **Summarizer**, **Speech Summarization**, **Voice Agent**, and **Decisions** through a web UI backed by an Express/tRPC server that handles JWT authentication and all API communication.
 ![screenshot of the playground](https://github.com/user-attachments/assets/92ce3a67-b9c1-4709-9c37-e0396e2ea249)
 
 
@@ -17,6 +17,7 @@ A Node.js/Express + React playground for the [Zoom AI Services APIs](https://dev
 | **Scribe** | Batch | Transcribe a single S3 file, an S3 prefix, or a manifest of S3 URIs / public URLs |
 | **Translator** | Fast  | Translate up to 4,000 characters between 29 supported locales, including all 24 EU languages, with optional source auto-detection |
 | **Translator** | Batch | Translate `.txt` files stored in S3 |
+| **TTS** | Fast | Stream synthesized US English speech from up to 4,000 Unicode code points — ten voices, speed and volume controls, live playback, cancellation, and completed WAV downloads |
 | **Summarizer** | Fast  | Summarize a transcript (up to 96 KB) — recap, action items, summary, or full summary |
 | **Summarizer** | Batch | Summarize transcripts stored in S3 |
 | **Speech Summarization** | Summarize | Upload a recording (up to 50 MB / 2 hours) and stream its transcript and Markdown summary — automatic, predefined, or custom template, speaker/timestamp citations, sentiment removal, diarization, and profanity filter |
@@ -33,11 +34,14 @@ playground/          Vite + React + tRPC client (port 5173)
     │                                      ├── Zoom AI Services API
     │                                      └── AWS S3 (for batch jobs)
     ├── /api/speech-summarization ──▶  Upload + Server-Sent Events passthrough (same server)
+    ├── /api/tts                  ──▶  Raw 44.1 kHz PCM audio stream (same server)
     ├── /live/scribe              ──▶  WebSocket relay ──▶ Zoom Scribe Live
     └── /live/voice-agent         ──▶  WebSocket relay ──▶ Zoom Voice Agent
 ```
 
 The playground proxies `/trpc`, `/api`, and `/live/*` to the Express server. All Zoom calls happen server-side; the browser never touches Zoom credentials. For the WebSocket APIs (Scribe Live and Voice Agent) the browser can't set the `Authorization` header, so the server relays audio and events in both directions, injecting a fresh JWT.
+
+TTS accepts complete plain text in Fast mode and streams headerless PCM; the browser plays incoming samples and adds a WAV header for replay/download only after successful completion. Failed or cancelled streams are discarded.
 
 ## Prerequisites
 
@@ -110,7 +114,7 @@ docker build -t ai-services-quickstart .
 docker run --rm --env-file .env -p 4000:4000 ai-services-quickstart
 ```
 
-Open `http://localhost:4000`. The image builds the playground and serves it from the same server as `/trpc`, the webhook endpoints, and the `/live/scribe` and `/live/voice-agent` WebSocket relays. The `.env` file is excluded from the image; `--env-file` supplies credentials at runtime. If you change `PORT` in `.env`, update the container port mapping to match.
+Open `http://localhost:4000`. The image builds the playground and serves it from the same server as `/trpc`, `/api` streaming routes, the webhook endpoints, and the `/live/scribe` and `/live/voice-agent` WebSocket relays. The `.env` file is excluded from the image; `--env-file` supplies credentials at runtime. If you change `PORT` in `.env`, update the container port mapping to match.
 
 ## Webhooks
 
@@ -126,6 +130,7 @@ Append the product's webhook path to the printed tunnel URL before entering it i
 
 - [Zoom AI Scribe documentation](https://developers.zoom.us/docs/ai-services/scribe)
 - [Zoom AI Translator documentation](https://developers.zoom.us/docs/ai-services/translator)
+- [Text-to-Speech documentation](https://developers.zoom.us/docs/ai-services/tts)
 - [Zoom AI Summarizer documentation](https://developers.zoom.us/docs/ai-services/summarizer)
 - [Speech Summarization documentation](https://developers.zoom.us/docs/ai-services/speech-summarization)
 - [Voice Agent documentation](https://developers.zoom.us/docs/ai-services/voice-agent)
