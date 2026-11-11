@@ -2,8 +2,12 @@ export const LANGUAGES = [
     ['en-US', 'English'], ['ar-AE', 'Arabic'], ['de-DE', 'German'], ['es-ES', 'Spanish'],
     ['fr-FR', 'French'], ['it-IT', 'Italian'], ['ja-JP', 'Japanese'], ['pt-PT', 'Portuguese'], ['zh-CN', 'Chinese'],
 ] as const
-const VOICES = ['alex', 'ariel', 'brooke', 'hazel', 'jenna', 'mark', 'reid', 'scott', 'tony']
-export const voicesForLanguage = (language: string) => language === 'ja-JP' ? ['brooke', 'hazel', 'reid'] : VOICES
+// Each target language has its own two voices; Zoom rejects any other pairing.
+const VOICES: Record<string, string[]> = {
+    'en-US': ['sarah', 'cole'], 'ar-AE': ['layla', 'omar'], 'de-DE': ['helena', 'felix'], 'es-ES': ['sofia', 'carlos'],
+    'fr-FR': ['camille', 'marc'], 'it-IT': ['elena', 'luca'], 'ja-JP': ['hana', 'kenji'], 'pt-PT': ['beatriz', 'tiago'], 'zh-CN': ['lin', 'bo'],
+}
+export const voicesForLanguage = (language: string) => VOICES[language] ?? []
 export type InterpreterOptions = { source: string; target: string; voice: string; transcription: boolean }
 
 export function sessionUpdate(options: InterpreterOptions) {

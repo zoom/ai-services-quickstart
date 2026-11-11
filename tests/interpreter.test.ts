@@ -5,16 +5,16 @@ import vm from 'node:vm'
 import { audioAppend, sessionUpdate, voicesForLanguage } from '../playground/src/products/interpreter/lib/protocol.ts'
 
 test('Interpreter uses its own session contract, optional transcription and target voice rules', () => {
-    const options = { source: 'en-US', target: 'es-ES', voice: 'jenna', transcription: true }
+    const options = { source: 'en-US', target: 'es-ES', voice: 'sofia', transcription: true }
     assert.deepEqual(sessionUpdate(options), {
-        type: 'session.update', session: { audio: { input: { language: 'en-US', transcription: {} }, output: { language: 'es-ES', voice: 'jenna' } } },
+        type: 'session.update', session: { audio: { input: { language: 'en-US', transcription: {} }, output: { language: 'es-ES', voice: 'sofia' } } },
     })
     assert.equal('transcription' in sessionUpdate({ ...options, transcription: false }).session.audio.input, false)
     assert.throws(() => sessionUpdate({ ...options, target: 'en-US' }), /different/)
-    assert.deepEqual(voicesForLanguage('ja-JP'), ['brooke', 'hazel', 'reid'])
+    assert.deepEqual(voicesForLanguage('ja-JP'), ['hana', 'kenji'])
     assert.throws(() => sessionUpdate({ ...options, target: 'ja-JP' }), /supported voice/)
-    assert.throws(() => sessionUpdate({ ...options, voice: 'ava' }), /supported voice/)
-    assert.equal(voicesForLanguage('es-ES').length, 9)
+    assert.throws(() => sessionUpdate({ ...options, voice: 'jenna' }), /supported voice/)
+    assert.equal(voicesForLanguage('xx-XX').length, 0)
     assert.deepEqual(audioAppend(new Uint8Array([0, 128, 255, 127]).buffer), { type: 'session.input_audio_buffer.append', audio: 'AID/fw==' })
     for (const size of [0, 1, 16002]) assert.throws(() => audioAppend(new ArrayBuffer(size)), /PCM16/)
     assert.ok(audioAppend(new ArrayBuffer(16000)))

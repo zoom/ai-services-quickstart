@@ -6,7 +6,7 @@ import { LANGUAGES, voicesForLanguage, type InterpreterOptions } from '../lib/pr
 import { useInterpreter } from '../lib/useInterpreter'
 
 export function LiveTab() {
-    const [options, setOptions] = useState<InterpreterOptions>({ source: 'en-US', target: 'es-ES', voice: 'jenna', transcription: true })
+    const [options, setOptions] = useState<InterpreterOptions>({ source: 'en-US', target: 'es-ES', voice: 'sofia', transcription: true })
     const { status, sourceText, translatedText, error, events, session, start, finish, cancel } = useInterpreter()
     const active = status === 'connecting' || status === 'live' || status === 'draining'
     const set = (patch: Partial<InterpreterOptions>) => setOptions(previous => {
@@ -32,7 +32,7 @@ export function LiveTab() {
                                 {LANGUAGES.map(([value, label]) => <option key={value} value={value} disabled={value === options.source}>{label}</option>)}
                             </select>
                         </Field>
-                        <Field label="Voice" hint={options.target === 'ja-JP' ? 'Three voices support Japanese' : 'Nine voices available'}>
+                        <Field label="Voice" hint="Voices for the target language">
                             <select aria-label="Interpreter voice" className={selectCls} value={options.voice} onChange={e => set({ voice: e.target.value })}>
                                 {voicesForLanguage(options.target).map(value => <option key={value}>{value}</option>)}
                             </select>
