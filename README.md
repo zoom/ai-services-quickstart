@@ -44,7 +44,7 @@ playground/          Vite + React + tRPC client (port 5173)
 
 The playground proxies `/trpc`, `/api`, and `/live/*` to the Express server. All Zoom calls happen server-side; the browser never touches Zoom credentials. For the WebSocket APIs (Scribe Live, Interpreter, and Voice Agent) the browser can't set the `Authorization` header, so the server relays audio and events in both directions, injecting a fresh JWT.
 
-TTS accepts complete plain text in Fast mode and streams headerless PCM; the browser plays incoming samples and adds a WAV header for replay/download only after successful completion. Failed or cancelled streams are discarded. Interpreter uses 16 kHz mono PCM in Base64 JSON events. **Finish input** flushes microphone audio, sends `session.close` once, and continues receiving text and speech until `session.closed` confirms completion. Use headphones to avoid feeding translated speech back into the microphone. Japanese output permits Brooke, Hazel, and Reid; other catalog targets permit all Interpreter voices except Ava.
+Interpreter uses 16 kHz mono PCM in Base64 JSON events. **Finish input** flushes microphone audio, sends `session.close` once, and continues receiving text and speech until `session.closed` confirms completion. Use headphones to avoid feeding translated speech back into the microphone. Each target language has its own two voices; the playground lists only the valid ones.
 
 ## Prerequisites
 
