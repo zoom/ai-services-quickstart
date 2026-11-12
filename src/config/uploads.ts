@@ -10,6 +10,8 @@ export const speechUploadPolicy: UploadPolicy = {
     extensions: ['wav', 'mp3', 'm4a', 'webm', 'mp4'],
     hint: 'WAV, MP3, M4A, WebM, MP4 · max 50 MB and 2 hours',
 }
+// The playground sends Clinical uploads through JSON; keep its local cap explicit.
+export const clinicalUploadPolicy: UploadPolicy = { ...scribeUploadPolicy, hint: 'Audio/video · playground upload limit 100 MB; use a recording URL for larger files' }
 export function validateUpload(file: { name: string; size: number }, policy: UploadPolicy): string | null {
     if (!file.size) return 'Choose a nonempty recording.'
     if (file.size > policy.maxBytes) return `Recording exceeds the ${policy.maxBytes / megabyte} MB upload limit.`

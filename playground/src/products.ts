@@ -8,8 +8,11 @@ import { FastTab as TranslatorFastTab } from './products/translator/tabs/FastTab
 import { BatchTab as TranslatorBatchTab } from './products/translator/tabs/BatchTab'
 import { LiveTab as VoiceAgentLiveTab } from './products/voice-agent/tabs/LiveTab'
 import { SummarizeTab as SpeechSummarizationTab } from './products/speech-summarization/tabs/SummarizeTab'
+import { GenerateTab as ClinicalNotesGenerateTab } from './products/clinical-notes/tabs/GenerateTab'
+import { JobTab as ClinicalNotesJobTab } from './products/clinical-notes/tabs/JobTab'
 import { DecideTab as DecisionsTab } from './products/decisions/tabs/DecideTab'
 import { FastTab as TtsFastTab } from './products/tts/tabs/FastTab'
+import { LiveTab as InterpreterLiveTab } from './products/interpreter/tabs/LiveTab'
 
 export type ProductTab = {
     id: string
@@ -54,6 +57,14 @@ export const PRODUCTS: Product[] = [
         ],
     },
     {
+        id: 'interpreter',
+        label: 'Interpreter',
+        defaultTab: 'live',
+        tabs: [
+            { id: 'live', label: 'Live', hint: 'Translate live speech into text and audio', component: InterpreterLiveTab },
+        ],
+    },
+    {
         id: 'summarizer',
         label: 'Summarizer',
         defaultTab: 'fast',
@@ -76,6 +87,15 @@ export const PRODUCTS: Product[] = [
         defaultTab: 'live',
         tabs: [
             { id: 'live', label: 'Live', hint: 'Talk to a voice agent in real time', component: VoiceAgentLiveTab },
+        ],
+    },
+    {
+        id: 'clinical-notes',
+        label: 'Clinical Notes',
+        defaultTab: 'generate',
+        tabs: [
+            { id: 'generate', label: 'Generate', hint: 'Transcribe a recording and generate a note', component: ClinicalNotesGenerateTab },
+            { id: 'jobs', label: 'Jobs', hint: 'Submit a recording URL as an asynchronous job', component: ClinicalNotesJobTab },
         ],
     },
     {

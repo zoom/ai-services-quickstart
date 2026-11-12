@@ -11,9 +11,21 @@ class PCMProcessor extends AudioWorkletProcessor {
     super();
     this._frame = new Int16Array(FRAME_SAMPLES);
     this._length = 0;
+    this._stopped = false;
+    this.port.onmessage = (event) => {
+      if (event.data.type !== 'flush' || this._stopped) return;
+      this._stopped = true;
+      if (this._length) {
+        const tail = this._frame.buffer.slice(0, this._length * 2);
+        this.port.postMessage(tail, [tail]);
+        this._length = 0;
+      }
+      this.port.postMessage({ type: 'flushed' });
+    };
   }
 
   process(inputs) {
+    if (this._stopped) return true;
     const ch = inputs[0] && inputs[0][0];
     if (ch) {
       for (let i = 0; i < ch.length; i++) {
